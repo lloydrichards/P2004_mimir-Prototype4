@@ -19,9 +19,9 @@ public:
   void initNeoPixels(int brightness = 50);
   void initSensors();
   void initWIFI();
+  void forceStartWiFi();
   void i2cScanner();
   void testNeoPixels(int repeat = 3, int delay = 500);
-  void currentStatus();
   void testBattery();
   void testHTTPRequest();
   bool beginBH1715(uint8_t addr, TwoWire &wirePort = Wire);
@@ -29,6 +29,10 @@ public:
   void readSensors();
   void sendData();
   void printSensors();
+  void WiFi_ON();
+  void WiFi_OFF();
+  void SLEEP();
+  void readBattery();
 
 private:
   int _BATTERY = 0;
@@ -45,10 +49,9 @@ private:
   float temp1;
   float temp2;
   float temp3;
-  float temp4;
+  float alt;
   float hum1;
   float hum2;
-  float hum3;
   float pres;
   float lux1;
   float lux2;
@@ -58,14 +61,12 @@ private:
   float eCO2;
   float tVOC;
 
-  uint32_t statusColour(int status);
-  void setStatus(int status, int newStatus);
   void writeFile(fs::FS &fs, const char *path, const char *message);
   void appendFile(fs::FS &fs, const char *path, const char *message);
-  void printValue(float value, const char *type, const char *unit);
+  void printValue(float value, const char *type, const char *unit, int decimel = 2);
   void getIPAddress();
-  void burnReading(int repeat = 8);
-  void busyLED(int led, int repeat = 3, int duration = 10);
+  void blinkPixel(int pixel, int R = 255, int G = 0, int B = 0, int repeat = 1);
+  float getBatteryVoltage();
   String packageJSON();
 
   static uint32_t Colour(uint8_t r, uint8_t g, uint8_t b)
