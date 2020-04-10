@@ -2,10 +2,7 @@
 #include <Wire.h>
 #include <MimirTesting.h>
 
-MimirTesting mimirTesting;
-
-#define uS_TO_S_FACTOR 1000000 /* Conversion factor for micro seconds to seconds */
-#define TIME_TO_SLEEP 900       /* Time ESP32 will go to sleep (in seconds) */
+MimirTesting mimirTesting; /* Time ESP32 will go to sleep (in seconds) */
 
 void setup()
 {
@@ -14,22 +11,20 @@ void setup()
 
     Wire.begin();
     mimirTesting.initDisplay(115200);
-    //mimirTesting.initNeoPixels(50);
+    mimirTesting.initNeoPixels(50);
     mimirTesting.initSensors();
-   // mimirTesting.initWIFI();
+    mimirTesting.initWIFI();
   }
-  // mimirTesting.readSensors();
-  // mimirTesting.WiFi_ON();
-  // mimirTesting.sendData();
-  // mimirTesting.WiFi_OFF();
-  // mimirTesting.printSensors();
-  //esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
-  //mimirTesting.SLEEP();
-  //esp_deep_sleep_start();
+  mimirTesting.initTimer();
+  mimirTesting.initDash();
+  mimirTesting.readBattery();
+  mimirTesting.readSensors();
+  mimirTesting.WiFi_ON();
+  mimirTesting.sendData();
+  mimirTesting.WiFi_OFF();
+  mimirTesting.SLEEP();
 }
 
 void loop()
 {
-  mimirTesting.readBattery();
-  delay(5000);
 }

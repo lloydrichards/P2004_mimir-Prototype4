@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <SD.h>
+#include "time.h"
 
 #include <WiFi.h>
 #include <DNSServer.h>
@@ -39,6 +40,7 @@
 GxIO_Class io(SPI, /*CS=5*/ SS, /*DC=*/17, /*RST=*/16); // arbitrary selection of 17, 16
 GxEPD_Class display(io, /*RST=*/16, /*BUSY=*/4);
 
+#define BATTERY_SENSOR_PIN 39
 #define LED_PIN 25
 #define LED_COUNT 5
 //Define Sensors
@@ -87,49 +89,51 @@ void MimirTesting::initNeoPixels(int brightness)
     strip.show(); // Turn OFF all pixels ASAP
 }
 
-void MimirTesting::initSensors()
+void MimirTesting::initSensors(bool _display)
 {
-
-    pinMode(12, INPUT);
-    display.fillScreen(GxEPD_WHITE);
-    display.setCursor(2, 20);
-    blinkPixel(1, 0, 0, 255, 2);
-    !sht31_L.begin(addrSHT31D_L) ? display.println("SHT31_L: X ")
-                                 : display.println("SHT31_L: O");
-
-    !sht31_H.begin(addrSHT31D_H) ? display.println("SHT31_H: X")
-                                 : display.println("SHT31_H: O");
-    if (!veml6030.begin())
-    {
-        display.println("VEML6030: X");
-    }
-    else
+    SHT31D_L_STATUS = sht31_L.begin(addrSHT31D_L);
+    SHT31D_H_STATUS = sht31_H.begin(addrSHT31D_H);
+    if (veml6030.begin())
     {
         veml6030.setGain(gain);
         veml6030.setIntegTime(integTime);
-        display.println("VEML6030: O");
-    };
-
-    !ccs811B.begin() ? display.println("CCS811B: X")
-                     : display.println("CCS811B: O");
-
-    !bmp280.begin(addrbmp280) ? display.println("bmp280: X")
-                              : display.println("bmp280: O");
-
-    pinMode(36, OUTPUT);
-    digitalWrite(36, LOW);
-    !beginBH1715(addrBH1715_L) ? display.println("BH1715_L: X")
-                               : display.println("BH1715_L: O");
-    !beginBH1715(addrBH1715_H) ? display.println("BH1715_H: X")
-                               : display.println("BH1715_H: O");
+        VEML6030_STATUS = true;
+    }
     pinMode(32, INPUT);
-    !isnan(analogRead(32)) ? display.println("TEMT600: O")
-                           : display.println("TEMT600: X");
+    TEMT600_STATUS = !isnan(analogRead(32));
+    CCS811B_STATUS = ccs811B.begin();
+    BMP280_STATUS = bmp280.begin(addrbmp280);
+
+    if (_display)
+        DisplaySensors();
+}
+
+void MimirTesting::DisplaySensors()
+{
+    display.fillScreen(GxEPD_WHITE);
+    display.setCursor(2, 20);
+    !SHT31D_L_STATUS ? display.println("SHT31_L: X ")
+                     : display.println("SHT31_L: O");
+
+    !SHT31D_H_STATUS ? display.println("SHT31_H: X")
+                     : display.println("SHT31_H: O");
+
+    !VEML6030_STATUS ? display.println("VEML6030: X")
+                     : display.println("VEML6030: O");
+
+    !CCS811B_STATUS ? display.println("CCS811B: X")
+                    : display.println("CCS811B: O");
+
+    !BMP280_STATUS ? display.println("bmp280: X")
+                   : display.println("bmp280: O");
+
+    !TEMT600_STATUS ? display.println("TEMT600: O")
+                    : display.println("TEMT600: X");
 
     display.update();
 }
 
-void MimirTesting::initWIFI()
+void MimirTesting::initWIFI(bool _display)
 {
     WiFiManager wifiManager;
     strip.setPixelColor(2, strip.Color(255, 255, 0));
@@ -137,6 +141,24 @@ void MimirTesting::initWIFI()
     wifiManager.autoConnect("mimirAP");
     strip.setPixelColor(2, strip.Color(0, 255, 0));
     strip.show();
+    if (_display)
+        DisplayWiFiCredentials();
+    if (WiFi.status() == WL_CONNECTED)
+    {
+        wifi_signal = WiFi.RSSI();
+        SetupTime();
+    }
+    else
+    {
+        strip.setPixelColor(2, strip.Color(255, 0, 0));
+        strip.show();
+    }
+
+    WiFi_OFF();
+}
+
+void MimirTesting::DisplayWiFiCredentials()
+{
     display.fillScreen(GxEPD_WHITE);
     display.setCursor(2, 20);
     if (WiFi.status() == WL_CONNECTED)
@@ -146,15 +168,28 @@ void MimirTesting::initWIFI()
         display.println(WiFi.localIP());
         display.println("MAC:");
         display.println(WiFi.macAddress());
+        display.println("RSSI:");
+        display.println(WiFi.RSSI());
     }
     else
     {
         display.println("ERROR");
-        strip.setPixelColor(2, strip.Color(255, 0, 0));
-        strip.show();
     }
     display.update();
-    WiFi_OFF();
+}
+
+void MimirTesting::initDash()
+{
+    display.fillScreen(GxEPD_WHITE);
+    DisplayWiFiIcon(70, 20);
+    DisplayBatteryIcon(100, 20);
+    display.drawLine(0, 25, GxEPD_WIDTH, 25, GxEPD_BLACK);
+    display.update();
+}
+
+void MimirTesting::initTimer()
+{
+    StartTime = millis();
 }
 
 void MimirTesting::forceStartWiFi()
@@ -172,11 +207,15 @@ void MimirTesting::WiFi_ON()
 
     WiFiManager wifiManager;
     wifiManager.autoConnect("mimirAP");
+    wifi_signal = WiFi.RSSI();
     strip.setPixelColor(2, strip.Color(0, 255, 0));
     strip.show();
 };
 void MimirTesting::WiFi_OFF()
 {
+    strip.setPixelColor(2, strip.Color(255, 255, 0));
+    strip.show();
+    WiFi.disconnect();
     WiFi.mode(WIFI_OFF);
     strip.setPixelColor(2, strip.Color(0, 0, 0));
     strip.show();
@@ -184,15 +223,29 @@ void MimirTesting::WiFi_OFF()
 
 void MimirTesting::SLEEP()
 {
+    long SleepTimer = (SleepDuration * 60 - ((CurrentMin % SleepDuration) * 60 + CurrentSec)) + 30; //Some ESP32 are too fast to maintain accurate time
+    esp_sleep_enable_timer_wakeup(SleepTimer * 1000000LL);
+    display.setCursor(2, 120);
+    display.fillRect(0, 100, GxEPD_WIDTH, GxEPD_HEIGHT - 100, GxEPD_WHITE);
+    display.updateWindow(0, 100, GxEPD_WIDTH, GxEPD_HEIGHT - 100);
+    display.println("Entering " + String(SleepTimer) + "-secs of sleep time");
+    display.println("Awake for : " + String((millis() - StartTime) / 1000.0, 3) + "-secs");
+    display.println("Starting deep-sleep...");
+    display.updateWindow(0, 100, GxEPD_WIDTH, GxEPD_HEIGHT - 100);
+    delay(100);
+    display.powerDown();
+
     for (int y = 0; y > strip.numPixels(); y++)
     {
         strip.setPixelColor(y, strip.Color(0, 0, 0));
     }
     strip.show();
+    strip.clear();
     delay(100);
+    esp_deep_sleep_start();
 }
 
-void MimirTesting::readSensors()
+void MimirTesting::readSensors(bool _display)
 {
     temp1 = (float)sht31_L.readTemperature();
     temp2 = (float)sht31_H.readTemperature();
@@ -202,37 +255,62 @@ void MimirTesting::readSensors()
     pres = (float)bmp280.readPressure() / 100;
     alt = (float)bmp280.readAltitude(SEALEVELPRESSURE_HPA);
     lux1 = (float)veml6030.readLight();
-    lux2 = (float)readBH1715(addrBH1715_H);
-    lux3 = (float)readBH1715(addrBH1715_L);
-    lux4 = (float)(analogRead(32) * 0.9765625);
+    lux2 = (float)(analogRead(32) * 0.9765625);
     //ccs811B.readData();
     //eCO2 = (float)ccs811B.geteCO2();
     //tVOC = (float)ccs811B.getTVOC();
-    blinkPixel(1, 0, 255, 0, 2);
+    if (_display)
+        DisplayReadings();
 }
 
-void MimirTesting::printSensors()
+void MimirTesting::DisplayReadings()
 {
     display.fillScreen(GxEPD_WHITE);
     display.setCursor(2, 20);
-    //printValue(temp1, "T1", "C");
-    printValue(temp2, "T2", "C");
-    printValue(temp3, "T3", "C");
+    if (SHT31D_L_STATUS)
+    {
+        printValue(temp1, "T1", "C");
+        printValue(hum1, "H1", "%");
+        display.println("____________");
+    }
 
-    //printValue(hum1, "H1", "%");
-    printValue(hum2, "H2", "%");
-    printValue(pres, "P", "hPa");
-    printValue(alt, "Alt", "m");
-    printValue(lux1, "L1", "lux");
-    //printValue(lux2, "L2", "lux");
-    //printValue(lux3, "L3", "lux");
-    printValue(lux4, "L4", "lux");
-    printValue(eCO2, "CO2", "ppm");
-    printValue(tVOC, "VOC", "ppb");
+    if (SHT31D_H_STATUS)
+    {
+        printValue(temp2, "T2", "C");
+        printValue(hum2, "H2", "%");
+        display.println("____________");
+    }
+
+    if (VEML6030_STATUS)
+    {
+        printValue(lux1, "L1", "lux");
+        display.println("____________");
+    }
+
+    if (CCS811B_STATUS)
+    {
+        printValue(eCO2, "CO2", "ppm");
+        printValue(tVOC, "VOC", "ppb");
+        display.println("____________");
+    }
+
+    if (BMP280_STATUS)
+    {
+        printValue(temp3, "T3", "C");
+        printValue(pres, "P", "hPa");
+        printValue(alt, "Alt", "m");
+        display.println("____________");
+    }
+
+    if (TEMT600_STATUS)
+    {
+        printValue(lux2, "L2", "lux");
+    }
+
     display.update();
 }
 
-void MimirTesting::sendData()
+void MimirTesting::sendData(bool _display)
 {
     if ((WiFi.status() == WL_CONNECTED))
     {
@@ -243,11 +321,14 @@ void MimirTesting::sendData()
         http.begin("https://us-central1-mimirhome-app.cloudfunctions.net/sensorData/add");
         http.addHeader("Content-Type", "application/json");
         int httpResponseCode = http.POST(package);
-        display.fillScreen(GxEPD_WHITE);
-        display.setCursor(2, 20);
+        String response = http.getString();
+
+        if (_display)
+            DisplaySentData(httpResponseCode, response);
+
         if (httpResponseCode > 0)
         {
-            String response = http.getString();
+
             display.println("Data Sent!");
             display.println(httpResponseCode);
             display.println(response);
@@ -261,12 +342,30 @@ void MimirTesting::sendData()
             blinkPixel(1, 255, 0, 0, 2);
         }
         getIPAddress();
-        display.update();
 
         http.end();
     }
     else
         initWIFI();
+}
+
+void MimirTesting::DisplaySentData(int httpResponseCode, String response)
+{
+    display.fillScreen(GxEPD_WHITE);
+    display.setCursor(2, 20);
+    if (httpResponseCode > 0)
+    {
+        display.println("Data Sent!");
+        display.println(httpResponseCode);
+        display.println(response);
+    }
+    else
+    {
+        display.println("ERROR");
+        display.println("Error on sending POST request");
+        display.println(httpResponseCode);
+    }
+    display.update();
 }
 
 void MimirTesting::testHTTPRequest()
@@ -441,38 +540,6 @@ void MimirTesting::printValue(float value, const char *type, const char *unit, i
     display.println(unit);
 }
 
-bool MimirTesting::beginBH1715(uint8_t addr, TwoWire &wirePort)
-{
-    TwoWire *_i2cPort = &wirePort;
-
-    _i2cPort->beginTransmission(addr);
-    _i2cPort->write(0x01);
-    _i2cPort->endTransmission();
-    delay(6);
-
-    //Set to Continuous Mode
-    _i2cPort->beginTransmission(addr);
-    _i2cPort->write(0x10);
-    uint8_t _ret = _i2cPort->endTransmission();
-    if (!_ret)
-        return true;
-    else
-        return false;
-}
-
-float MimirTesting::readBH1715(int addr)
-{
-    unsigned int data[2];
-    Wire.requestFrom(addr, 2);
-    if (Wire.available() == 2)
-    {
-        data[0] = Wire.read();
-        data[1] = Wire.read();
-    }
-    delay(300);
-    return ((data[0] * 256) + data[1]) / 1.2;
-}
-
 String MimirTesting::packageJSON()
 {
     if (_IP_ADDRESS == "" || _IP_ADDRESS == "400 Bad Request")
@@ -504,9 +571,7 @@ String MimirTesting::packageJSON()
     data["Pressure (bmp280)"] = pres;
     data["Altitude (bmp280)"] = pres;
     data["Luminance (VEML6030)"] = lux1;
-    data["Luminance (BH1715_H)"] = lux2;
-    data["Luminance (BH1715_L)"] = lux3;
-    data["Luminance (TEMT600)"] = lux4;
+    data["Luminance (TEMT600)"] = lux2;
     data["eCO2 (CCS811)"] = eCO2;
     data["VOC (CCS811)"] = tVOC;
 
@@ -527,20 +592,24 @@ void MimirTesting::blinkPixel(int pixel, int R, int G, int B, int repeat)
     };
 }
 
-void MimirTesting::readBattery()
+void MimirTesting::readBattery(bool _display)
 {
+    pinMode(BATTERY_SENSOR_PIN, INPUT);
     float voltage = getBatteryVoltage(); //output value
     const float battery_max = 4.2;       //maximum voltage of battery
     const float battery_min = 3.3;       //minimum voltage of battery before shutdown
-    float batteryPercent = ((voltage - battery_min) / (battery_max - battery_min)) * 100;
+    batteryPercent = roundf(((voltage - battery_min) / (battery_max - battery_min)) * 100);
+
     display.fillScreen(GxEPD_WHITE);
     display.setCursor(2, 20);
     display.println("Battery Level...");
-    display.print("Voltage: ");
-    display.println(voltage);
-    display.print("Battery %: ");
-    display.println(batteryPercent);
-    display.println(analogRead(12));
+    printValue(voltage, "Voltage", "V");
+    printValue(batteryPercent, "Battery", "%");
+
+    DisplayBatteryIcon(10, 200);
+    DisplayWiFiIcon(40, 200);
+    display.drawLine(0, 200, 80, 200, GxEPD_BLACK);
+
     display.update();
 }
 
@@ -555,15 +624,102 @@ float MimirTesting::getBatteryVoltage()
 
     for (int i = 0; i < 500; i++)
     {
-        sum += analogRead(12);
+        sum += analogRead(BATTERY_SENSOR_PIN);
         delayMicroseconds(1000);
     }
     // calculate the voltage
     voltage = sum / (float)500;
-    voltage = (voltage * 3.6) / 4096.0; //for internal 1.1v reference
-                                        // use if added divider circuit
-    voltage = voltage / (R2 / (R1 + R2));
+    voltage = (voltage * 5.159) / 4096.0; //for internal 1.1v reference
+                                          // use if added divider circuit
+    //voltage = voltage / (R2 / (R1 + R2));
     //round value by two precision
     voltage = roundf(voltage * 100) / 100;
     return voltage;
+}
+
+void MimirTesting::DisplayBatteryIcon(int x, int y)
+{
+    display.drawRect(x, y - 10, 20, 10, GxEPD_BLACK); // Draw battery pack
+    display.fillRect(x + 20, y - 7, 3, 5, GxEPD_BLACK);
+    if (batteryPercent < 20) //Draw Warning Battery
+    {
+        display.fillCircle(x - 18, y + 12, 2, GxEPD_BLACK);
+        display.fillRect(x - 14, y + 11, 10, 3, GxEPD_BLACK);
+    }
+    else if (batteryPercent < 50) // Draw Percent Battery
+    {
+        display.fillRect(x + 2, y - 8, 16 * batteryPercent / 100.0, 6, GxEPD_BLACK);
+    }
+    else // Draw Charging Battery
+    {
+        display.drawLine(x + 2, y - 3, x + 10, y - 8, GxEPD_BLACK);
+        display.drawLine(x + 10, y - 8, x + 10, y - 3, GxEPD_BLACK);
+        display.drawLine(x + 10, y - 3, x + 17, y - 8, GxEPD_BLACK);
+    }
+}
+
+void MimirTesting::DisplayWiFiIcon(int x, int y)
+{
+    int WIFIsignallevel = 0;
+    int xpos = 1;
+    for (int _rssi = -100; _rssi <= wifi_signal; _rssi = _rssi + 20)
+    {
+        if (_rssi <= -20)
+            WIFIsignallevel = 20; //            <-20dbm displays 5-bars
+        if (_rssi <= -40)
+            WIFIsignallevel = 16; //  -40dbm to  -21dbm displays 4-bars
+        if (_rssi <= -60)
+            WIFIsignallevel = 12; //  -60dbm to  -41dbm displays 3-bars
+        if (_rssi <= -80)
+            WIFIsignallevel = 8; //  -80dbm to  -61dbm displays 2-bars
+        if (_rssi <= -100)
+            WIFIsignallevel = 4; // -100dbm to  -81dbm displays 1-bar
+        display.fillRect(x + xpos * 5, y - WIFIsignallevel, 4, WIFIsignallevel, GxEPD_BLACK);
+        xpos++;
+    }
+    display.fillRect(x, y - 1, 4, 1, GxEPD_BLACK);
+}
+
+void MimirTesting::drawString(int x, int y, String text, alignment align)
+{
+    int16_t x1, y1; //the bounds of x,y and w and h of the variable 'text' in pixels.
+    uint16_t w, h;
+    display.setTextWrap(false);
+    display.getTextBounds(text, x, y, &x1, &y1, &w, &h);
+    if (align == RIGHT)
+        x = x - w;
+    if (align == CENTER)
+        x = x - w / 2;
+    display.setCursor(x, y + h);
+    display.print(text);
+}
+
+bool MimirTesting::SetupTime()
+{
+    configTime(0, 0, "ch.pool.ntp.org", "time.nist.gov");
+    setenv("TZ", TZ_INFO, 1);
+    delay(100);
+    bool TimeStatus = UpdateLocalTime();
+    return TimeStatus;
+}
+
+bool MimirTesting::UpdateLocalTime()
+{
+    struct tm timeinfo;
+    char output[30], day_output[30];
+    while (!getLocalTime(&timeinfo, 5000))
+    { // Wait for up to 5-secs
+        Serial.println(F("Failed to obtain time"));
+        return false;
+    }
+    CurrentHour = timeinfo.tm_hour;
+    CurrentMin = timeinfo.tm_min;
+    CurrentSec = timeinfo.tm_sec;
+    //See http://www.cplusplus.com/reference/ctime/strftime/
+    //Serial.println(&timeinfo, "%H:%M:%S");                               // Displays: 14:05:49
+    strftime(day_output, 30, "%a  %d-%b-%y", &timeinfo);     // Displays: Sat 24-Jun-17
+    strftime(output, sizeof(output), "%H:%M:%S", &timeinfo); // Creates: '14:05:49'
+    DateStr = day_output;
+    TimeStr = output;
+    return true;
 }
