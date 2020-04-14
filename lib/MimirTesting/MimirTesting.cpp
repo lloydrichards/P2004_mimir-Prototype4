@@ -32,6 +32,7 @@
 #include <GxEPD.h>
 #include <GxGDEH0213B73/GxGDEH0213B73.h>
 #include <Fonts/FreeSans9pt7b.h>
+#include "epaper_fonts.h"
 
 //Set Screen SPI
 #include <GxIO/GxIO_SPI/GxIO_SPI.h>
@@ -70,7 +71,8 @@ MimirTesting::MimirTesting()
 void MimirTesting::initDisplay(int baudRate)
 {
     display.init(baudRate);
-    display.setFont(&FreeSans9pt7b);
+    display.setFont(&Roboto_Slab_Regular_16);
+    display.setTextSize(0);
     display.setTextColor(GxEPD_BLACK);
     display.setRotation(0);
     display.setCursor(2, 20);
