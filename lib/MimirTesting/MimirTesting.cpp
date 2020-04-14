@@ -71,14 +71,39 @@ MimirTesting::MimirTesting()
 void MimirTesting::initDisplay(int baudRate)
 {
     display.init(baudRate);
-    display.setFont(&Roboto_Slab_Regular_16);
-    display.setTextSize(0);
     display.setTextColor(GxEPD_BLACK);
     display.setRotation(0);
-    display.setCursor(2, 20);
-    display.println("I want...");
+    display.setCursor(0, 20);
+
+    display.setFont(&Lato_Regular_10);
+    display.print("Temp: ");
+    display.setFont(&Roboto_Slab_Regular_16);
+    display.print("21.6");
+    display.println(" C");
     display.println();
-    display.println("PANCAKES!");
+
+    display.setFont(&Lato_Regular_10);
+    display.print("Humi: ");
+    display.setFont(&Roboto_Slab_Regular_16);
+    display.print("37");
+    display.println(" %");
+    display.println();
+
+    display.setFont(&Lato_Regular_10);
+    display.print("Pres: ");
+    display.setFont(&Roboto_Slab_Regular_16);
+    display.print("2199");
+    display.println(" Hpa");
+    display.println();
+
+    display.setFont(&Lato_Regular_10);
+    display.print("CO2: ");
+    display.setFont(&Roboto_Slab_Regular_16);
+    display.print("1200");
+    display.println(" ppm");
+    display.println();
+
+    display.setFont(&Lato_Regular_10);
     display.update();
     delay(1000);
     display.updateWindow(0, 0, GxEPD_WIDTH, GxEPD_HEIGHT, true);
@@ -355,6 +380,7 @@ void MimirTesting::DisplaySentData(int httpResponseCode, String response)
 {
     display.fillScreen(GxEPD_WHITE);
     display.setCursor(2, 20);
+
     if (httpResponseCode > 0)
     {
         display.println("Data Sent!");

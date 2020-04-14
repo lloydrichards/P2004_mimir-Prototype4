@@ -18,9 +18,9 @@ void setup()
   mimirTesting.initTimer();
   mimirTesting.initDash();
   mimirTesting.readBattery();
-  mimirTesting.readSensors();
+  mimirTesting.readSensors(true);
   mimirTesting.WiFi_ON();
-  mimirTesting.sendData();
+  mimirTesting.sendData(true);
   mimirTesting.WiFi_OFF();
   mimirTesting.SLEEP();
 }
