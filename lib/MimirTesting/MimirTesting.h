@@ -37,6 +37,8 @@ public:
   void readSensors(bool display = false);
   void readBattery(bool display = false);
 
+  void DisplayDeviceInfo();
+
   void sendData(bool display = false);
   void WiFi_ON();
   void WiFi_OFF();
@@ -53,9 +55,9 @@ private:
   int _MICROSD = 0;
 
   String _IP_ADDRESS;
-  String _USER = "Lloyd Richards";
-  String _USER_ID = "P2003_PROTOTYPE";
-  String _DEVICE_ID = "PROTOTYPE3_03";
+  char _USER[];
+  char _USER_ID[];
+  char _DEVICE_ID[];
 
   String TimeStr, DateStr, ErrorMessage; // strings to hold time and date
   const char *TZ_INFO = "CET-1CEST,M3.5.0,M10.5.0/3";
@@ -87,8 +89,12 @@ private:
 
   void writeFile(fs::FS &fs, const char *path, const char *message);
   void appendFile(fs::FS &fs, const char *path, const char *message);
+  void initConfig();
+  void saveConfig();
+
   void printValue(float value, const char *type, const char *unit, int decimel = 2);
   void getIPAddress();
+
   void DisplayWiFiIcon(int x, int y);
   void DisplayBatteryIcon(int x, int y);
   void DisplaySensors();
@@ -96,6 +102,7 @@ private:
   void DisplayWiFiSetup();
   void DisplayWiFiCredentials();
   void DisplaySentData(int httpResponseCode, String response);
+
   void drawString(int x, int y, String text, alignment align);
   void blinkPixel(int pixel, int R = 255, int G = 0, int B = 0, int repeat = 1);
 
