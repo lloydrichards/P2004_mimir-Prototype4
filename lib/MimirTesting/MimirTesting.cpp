@@ -326,19 +326,10 @@ void MimirTesting::forceStartWiFi()
     }
 
     delay(5000);
-
-    Serial.println(custom_USER.getValue());
-    Serial.println(custom_USER_ID.getValue());
-    Serial.println(custom_DEVICE_ID.getValue());
-
     //Update Device Info with Params
     strcpy(_USER, custom_USER.getValue());
     strcpy(_USER_ID, custom_USER_ID.getValue());
     strcpy(_DEVICE_ID, custom_DEVICE_ID.getValue());
-
-    Serial.println(_USER);
-    Serial.println(_USER_ID);
-    Serial.println(_DEVICE_ID);
 
     saveConfig();
 
@@ -409,6 +400,10 @@ void MimirTesting::DisplayDeviceInfo()
 {
     display.fillScreen(GxEPD_WHITE);
     display.setCursor(0, 20);
+    display.print("Time: ");
+    display.println(TimeStr);
+    display.println(DateStr);
+    display.println("____________");
     display.print("User: ");
     display.println(_USER);
     display.print("UserID: ");

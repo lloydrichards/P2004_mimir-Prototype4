@@ -24,7 +24,7 @@ void setup()
   mimirTesting.WiFi_ON();
   mimirTesting.sendData(true);
   mimirTesting.WiFi_OFF();
-  mimirTesting.forceStartWiFi();
+  //mimirTesting.forceStartWiFi();
 }
 
 void loop()
