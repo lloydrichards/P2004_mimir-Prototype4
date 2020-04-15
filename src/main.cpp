@@ -8,7 +8,6 @@ void setup()
 {
   if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_TIMER)
   {
-    Serial.begin(115200);
     Wire.begin();
     mimirTesting.initDisplay(115200);
     mimirTesting.initNeoPixels(50);
