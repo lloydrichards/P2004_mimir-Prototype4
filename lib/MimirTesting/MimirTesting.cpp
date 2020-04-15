@@ -1,4 +1,6 @@
 #include "MimirTesting.h"
+#include <FS.h> //this needs to be first, or it all crashes and burns...
+#include "SPIFFS.h"
 #include <Wire.h>
 #include <SPI.h>
 #include <SD.h>
@@ -14,7 +16,6 @@
 //Sensor Libraries
 #include "Adafruit_SHT31.h"                         //https://github.com/adafruit/Adafruit_SHT31
 #include "SparkFun_VEML6030_Ambient_Light_Sensor.h" //https://github.com/sparkfun/SparkFun_Ambient_Light_Sensor_Arduino_Library
-//https://github.com/ControlEverythingCommunity/BH1715/blob/master/Arduino/BH1715.ino
 #include <Adafruit_BMP280.h>
 #include "ccs811.h"
 
@@ -162,7 +163,16 @@ void MimirTesting::DisplaySensors()
 
 void MimirTesting::initWIFI(bool _display)
 {
+    WiFiManagerParameter custom_USER("User Name", "User Name", _USER, 40);
+    WiFiManagerParameter custom_USER_ID("User ID", "User ID", _USER_ID, 40);
+    WiFiManagerParameter custom_DEVICE_ID("Device ID", "Device ID", _DEVICE_ID, 40);
+
     WiFiManager wifiManager;
+
+    wifiManager.addParameter(&custom_USER);
+    wifiManager.addParameter(&custom_USER_ID);
+    wifiManager.addParameter(&custom_DEVICE_ID);
+
     strip.setPixelColor(2, strip.Color(255, 255, 0));
     strip.show();
     wifiManager.autoConnect("mimirAP");
@@ -181,7 +191,76 @@ void MimirTesting::initWIFI(bool _display)
         strip.show();
     }
 
+    //Update Device Info with Params
+    strcpy(_USER, custom_USER.getValue());
+    strcpy(_USER_ID, custom_USER_ID.getValue());
+    strcpy(_DEVICE_ID, custom_DEVICE_ID.getValue());
+
+    saveConfig();
+
     WiFi_OFF();
+}
+void MimirTesting::initConfig()
+{
+    if (SPIFFS.begin())
+    {
+
+        Serial.println("mounted file system");
+        if (SPIFFS.exists("/config.json"))
+        {
+            //file exists, reading and loading
+            Serial.println("reading config file");
+            fs::File configFile = SPIFFS.open("/config.json", "r");
+            if (configFile)
+            {
+                Serial.println("opened config file");
+                size_t size = configFile.size();
+                // Allocate a buffer to store contents of the file.
+                std::unique_ptr<char[]> buf(new char[size]);
+
+                configFile.readBytes(buf.get(), size);
+                DynamicJsonDocument configJson(1024);
+                DeserializationError error = deserializeJson(configJson, buf.get());
+                if (error)
+                {
+                    Serial.println("failed to load json config");
+                    return;
+                }
+                Serial.println("\nparsed json");
+                serializeJson(configJson, Serial);
+
+                strcpy(_USER, configJson["User"] | "N/A");
+                strcpy(_USER_ID, configJson["UserID"] | "N/A");
+                strcpy(_DEVICE_ID, configJson["DeviceID"] | "N/A");
+            }
+            else
+            {
+                Serial.println("failed to load json config");
+            }
+        }
+    }
+    else
+    {
+        Serial.println("failed to mount FS");
+    }
+}
+
+void MimirTesting::saveConfig()
+{
+    DynamicJsonDocument newConfigJson(1024);
+    newConfigJson["User"] = _USER;
+    newConfigJson["UserID"] = _USER_ID;
+    newConfigJson["DeviceID"] = _DEVICE_ID;
+
+    fs::File configFile = SPIFFS.open("/config.json", "w");
+    if (!configFile)
+    {
+        Serial.println("failed to open config file for writing");
+    }
+
+    serializeJson(newConfigJson, Serial);
+    serializeJson(newConfigJson, configFile);
+    configFile.close();
 }
 
 void MimirTesting::DisplayWiFiCredentials()
@@ -221,12 +300,40 @@ void MimirTesting::initTimer()
 
 void MimirTesting::forceStartWiFi()
 {
+    WiFiManagerParameter custom_USER("User Name", "User Name", _USER, 40);
+    WiFiManagerParameter custom_USER_ID("User ID", "User ID", _USER_ID, 40);
+    WiFiManagerParameter custom_DEVICE_ID("Device ID", "Device ID", _DEVICE_ID, 40);
+
+    WiFiManager wifiManager;
+
+    wifiManager.addParameter(&custom_USER);
+    wifiManager.addParameter(&custom_USER_ID);
+    wifiManager.addParameter(&custom_DEVICE_ID);
+
     display.fillScreen(GxEPD_WHITE);
     display.setCursor(2, 20);
     display.println("*WiFi Config*");
     display.println("****Mode*****");
     display.update();
+
+    if (!wifiManager.startConfigPortal("OnDemandAP"))
+    {
+        Serial.println("failed to connect and hit timeout");
+        delay(3000);
+        //reset and try again, or maybe put it to deep sleep
+        ESP.restart();
+        delay(5000);
+    }
+
     delay(5000);
+    //Update Device Info with Params
+    strcpy(_USER, custom_USER.getValue());
+    strcpy(_USER_ID, custom_USER_ID.getValue());
+    strcpy(_DEVICE_ID, custom_DEVICE_ID.getValue());
+
+    saveConfig();
+
+    WiFi_OFF();
 }
 
 void MimirTesting::WiFi_ON()
@@ -288,6 +395,55 @@ void MimirTesting::readSensors(bool _display)
     //tVOC = (float)ccs811B.getTVOC();
     if (_display)
         DisplayReadings();
+}
+void MimirTesting::DisplayDeviceInfo()
+{
+    display.fillScreen(GxEPD_WHITE);
+    display.setCursor(0, 20);
+    display.print("Time: ");
+    display.println(TimeStr);
+    display.println(DateStr);
+    display.println("____________");
+    display.print("User: ");
+    display.println(_USER);
+    display.print("UserID: ");
+    display.println(_USER_ID);
+    display.print("DeviceID: ");
+    display.println(_DEVICE_ID);
+    display.print("IP: ");
+    display.println(_IP_ADDRESS);
+    display.println("____________");
+    !SHT31D_L_STATUS ? display.println("SHT31_L: X ")
+                     : display.println("SHT31_L: O");
+
+    !SHT31D_H_STATUS ? display.println("SHT31_H: X")
+                     : display.println("SHT31_H: O");
+
+    !VEML6030_STATUS ? display.println("VEML6030: X")
+                     : display.println("VEML6030: O");
+
+    !CCS811B_STATUS ? display.println("CCS811B: X")
+                    : display.println("CCS811B: O");
+
+    !BMP280_STATUS ? display.println("bmp280: X")
+                   : display.println("bmp280: O");
+
+    !TEMT600_STATUS ? display.println("TEMT600: O")
+                    : display.println("TEMT600: X");
+
+    display.println("____________");
+    display.print("Battery: ");
+    display.println(_BATTERY);
+    display.print("Sensors: ");
+    display.println(_SENSOR);
+    display.print("WiFi: ");
+    display.println(_WIFI);
+    display.print("Server: ");
+    display.println(_SERVER);
+    display.print("MicroSD: ");
+    display.println(_MICROSD);
+
+    display.update();
 }
 
 void MimirTesting::DisplayReadings()
