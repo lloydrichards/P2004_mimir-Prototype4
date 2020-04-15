@@ -55,9 +55,9 @@ private:
   int _MICROSD = 0;
 
   String _IP_ADDRESS;
-  char _USER[];
-  char _USER_ID[];
-  char _DEVICE_ID[];
+  char _USER[40];
+  char _USER_ID[40];
+  char _DEVICE_ID[40];
 
   String TimeStr, DateStr, ErrorMessage; // strings to hold time and date
   const char *TZ_INFO = "CET-1CEST,M3.5.0,M10.5.0/3";
