@@ -21,6 +21,13 @@ enum alignment
 
 class MimirTesting
 {
+  enum status : char
+  {
+    ERROR = -1,
+    CONNECTED,
+    DISCONNECTED
+  };
+
 public:
   MimirTesting();
 
@@ -46,11 +53,11 @@ public:
   void SLEEP();
 
 private:
-  int _BATTERY = 0;
-  int _SENSOR = 0;
-  int _WIFI = 0;
-  int _SERVER = 0;
-  int _MICROSD = 0;
+  status _BATTERY;
+  status _SENSOR;
+  status _WIFI;
+  status _SERVER;
+  status _MICROSD;
 
   String _IP_ADDRESS;
   String _USER = "Lloyd Richards";
