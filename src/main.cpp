@@ -12,6 +12,7 @@ void setup()
     Wire.begin();
     mimirTesting.initDisplay(115200);
     mimirTesting.initNeoPixels(50);
+    mimirTesting.initConfig();
     mimirTesting.initSensors();
     mimirTesting.initWIFI();
   }

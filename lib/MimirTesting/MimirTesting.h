@@ -30,6 +30,7 @@ public:
   void initWIFI(bool display = false);
   void initDash();
   void initTimer();
+  void initConfig();
 
   void i2cScanner();
   void testNeoPixels(int repeat = 3, int delay = 500);
@@ -89,7 +90,6 @@ private:
 
   void writeFile(fs::FS &fs, const char *path, const char *message);
   void appendFile(fs::FS &fs, const char *path, const char *message);
-  void initConfig();
   void saveConfig();
 
   void printValue(float value, const char *type, const char *unit, int decimel = 2);

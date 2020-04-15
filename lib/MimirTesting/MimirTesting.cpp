@@ -204,6 +204,8 @@ void MimirTesting::initConfig()
 {
     if (SPIFFS.begin())
     {
+
+        Serial.println("mounted file system");
         if (SPIFFS.exists("/config.json"))
         {
             //file exists, reading and loading
@@ -211,6 +213,7 @@ void MimirTesting::initConfig()
             fs::File configFile = SPIFFS.open("/config.json", "r");
             if (configFile)
             {
+                Serial.println("opened config file");
                 size_t size = configFile.size();
                 // Allocate a buffer to store contents of the file.
                 std::unique_ptr<char[]> buf(new char[size]);
@@ -230,7 +233,15 @@ void MimirTesting::initConfig()
                 strcpy(_USER_ID, configJson["UserID"] | "N/A");
                 strcpy(_DEVICE_ID, configJson["DeviceID"] | "N/A");
             }
+            else
+            {
+                Serial.println("failed to load json config");
+            }
         }
+    }
+    else
+    {
+        Serial.println("failed to mount FS");
     }
 }
 
