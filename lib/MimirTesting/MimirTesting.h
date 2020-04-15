@@ -56,6 +56,7 @@ private:
   int _MICROSD = 0;
 
   String _IP_ADDRESS;
+  String _MAC_ADDRESS;
   char _USER[40];
   char _USER_ID[40];
   char _DEVICE_ID[40];

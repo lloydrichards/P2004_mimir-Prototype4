@@ -183,6 +183,7 @@ void MimirTesting::initWIFI(bool _display)
     if (WiFi.status() == WL_CONNECTED)
     {
         wifi_signal = WiFi.RSSI();
+        _MAC_ADDRESS = WiFi.macAddress();
         SetupTime();
     }
     else
@@ -412,6 +413,8 @@ void MimirTesting::DisplayDeviceInfo()
     display.println(_DEVICE_ID);
     display.print("IP: ");
     display.println(_IP_ADDRESS);
+    display.print("MAC: ");
+    display.println(_MAC_ADDRESS);
     display.println("____________");
     !SHT31D_L_STATUS ? display.println("SHT31_L: X ")
                      : display.println("SHT31_L: O");
