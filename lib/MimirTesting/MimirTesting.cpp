@@ -63,6 +63,20 @@ int integTime = 100;
 int ID;
 String dataMessage;
 
+typedef struct struct_message
+{
+    String deviceID;
+    String message;
+    String package;
+    float temp;
+    float hum;
+    float lux;
+
+} struct_message;
+
+struct_message outgoingReadings;
+struct_message incomingReadings;
+
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 MimirTesting::MimirTesting()
@@ -244,6 +258,51 @@ void MimirTesting::initConfig()
     {
         Serial.println("failed to mount FS");
     }
+}
+
+void MimirTesting::initESPNOW()
+{
+    WiFi.mode(WIFI_STA);
+    // Init ESP-NOW
+    if (esp_now_init() != ESP_OK)
+    {
+        Serial.println("Error initializing ESP-NOW");
+        return;
+    }
+    Serial.println("ESP NOW Initialized");
+    // Once ESPNow is successfully Init, we will register for Send CB to
+    // get the status of Trasnmitted packet
+    esp_now_register_send_cb(onDataSent);
+
+    // Register peer
+    Serial.println("Registering peer");
+    memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+    peerInfo.channel = 0;
+    peerInfo.encrypt = false;
+
+    // Add peer
+    if (esp_now_add_peer(&peerInfo) != ESP_OK)
+    {
+        Serial.println("Failed to add peer");
+        return;
+    }
+    Serial.println("Peer Added!");
+    // Register for a callback function that will be called when data is received
+    esp_now_register_recv_cb(onDataReceived);
+}
+
+void MimirTesting::onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
+{
+    Serial.print("\r\nLast Packet Send Status:\t");
+    Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+}
+
+void MimirTesting::onDataReceived(const uint8_t *mac, const uint8_t *incomingData, int len)
+{
+    memcpy(&incomingReadings, incomingData, sizeof(incomingReadings));
+    Serial.print("Bytes received: ");
+    Serial.println(len);
+    Serial.println(incomingReadings.message);
 }
 
 void MimirTesting::saveConfig()
@@ -431,8 +490,8 @@ void MimirTesting::DisplayDeviceInfo()
     !BMP280_STATUS ? display.println("bmp280: X")
                    : display.println("bmp280: O");
 
-    !TEMT600_STATUS ? display.println("TEMT600: O")
-                    : display.println("TEMT600: X");
+    !TEMT600_STATUS ? display.println("TEMT600: X")
+                    : display.println("TEMT600: O");
 
     display.println("____________");
     display.print("Battery: ");
@@ -496,7 +555,35 @@ void MimirTesting::DisplayReadings()
     display.update();
 }
 
-void MimirTesting::sendData(bool _display)
+void MimirTesting::sendDataESPNOW()
+{
+    if (mac2String(broadcastAddress) != _MAC_ADDRESS)
+    {
+        String package = packageJSON();
+        String message = "Hello Natalia! ";
+
+        outgoingReadings.deviceID = _DEVICE_ID;
+        outgoingReadings.message = message;
+        outgoingReadings.package = package;
+        outgoingReadings.temp = temp1;
+        outgoingReadings.hum = hum1;
+        outgoingReadings.lux = lux1;
+
+        // Send message via ESP-NOW
+        esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&outgoingReadings, sizeof(outgoingReadings));
+
+        if (result == ESP_OK)
+        {
+            Serial.println("Sent with success");
+        }
+        else
+        {
+            Serial.println("Error sending the data");
+        }
+    }
+}
+
+void MimirTesting::sendDataWIFI(bool _display)
 {
     if ((WiFi.status() == WL_CONNECTED))
     {
@@ -909,4 +996,17 @@ bool MimirTesting::UpdateLocalTime()
     DateStr = day_output;
     TimeStr = output;
     return true;
+}
+String MimirTesting::mac2String(byte ar[])
+{
+    String s;
+    for (byte i = 0; i < 6; ++i)
+    {
+        char buf[3];
+        sprintf(buf, "%2X", ar[i]);
+        s += buf;
+        if (i < 5)
+            s += ':';
+    }
+    return s;
 }

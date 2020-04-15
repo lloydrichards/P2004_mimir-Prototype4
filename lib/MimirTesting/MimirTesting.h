@@ -10,6 +10,8 @@
 #include <Wire.h>
 #include <SD.h>
 #include "time.h"
+#include <esp_now.h>
+#include <WiFi.h>
 #include <WiFiManager.h>
 
 enum alignment
@@ -18,6 +20,7 @@ enum alignment
   RIGHT,
   CENTER
 };
+
 
 class MimirTesting
 {
@@ -31,6 +34,7 @@ public:
   void initDash();
   void initTimer();
   void initConfig();
+  void initESPNOW();
 
   void i2cScanner();
   void testNeoPixels(int repeat = 3, int delay = 500);
@@ -40,7 +44,9 @@ public:
 
   void DisplayDeviceInfo();
 
-  void sendData(bool display = false);
+  void sendDataWIFI(bool display = false);
+  void sendDataESPNOW();
+  void startESPNOW();
   void WiFi_ON();
   void WiFi_OFF();
   void forceStartWiFi();
@@ -49,6 +55,15 @@ public:
   void SLEEP();
 
 private:
+  uint8_t allBroadcastAddress[4][6] = {
+      {0x24, 0x6F, 0x28, 0xB1, 0xDC, 0xE4},  //Device #1
+      {0x24, 0x6F, 0x28, 0xB1, 0xD4, 0x58},  //Device #2
+      {0x24, 0x6F, 0x28, 0xB1, 0xD5, 0x30},  //Device #3
+      {0x24, 0x6F, 0x28, 0xB1, 0xDC, 0xD8}}; //Device #4
+
+  uint8_t broadcastAddress[6] = {0x24, 0x6F, 0x28, 0xB1, 0xDC, 0xE4};
+  esp_now_peer_info_t peerInfo;
+
   int _BATTERY = 0;
   int _SENSOR = 0;
   int _WIFI = 0;
@@ -110,7 +125,12 @@ private:
   bool SetupTime();
   bool UpdateLocalTime();
   float getBatteryVoltage();
+
+  static void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
+  static void onDataReceived(const uint8_t *mac_addr, const uint8_t *incomingData, int len);
   String packageJSON();
+
+  String mac2String(byte ar[]);
 
   static uint32_t Colour(uint8_t r, uint8_t g, uint8_t b)
   {
