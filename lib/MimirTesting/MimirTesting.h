@@ -12,6 +12,8 @@
 #include "time.h"
 #include <WiFiManager.h>
 
+//Stored Variables in RTC
+
 enum alignment
 {
   LEFT,
@@ -24,12 +26,14 @@ class MimirTesting
 public:
   MimirTesting();
 
+  int BATTERY_PERCENT;
+
   void initDisplay(int baudRate = 115200);
   void initNeoPixels(int brightness = 50);
   void initSensors(bool display = false);
   void initWIFI(bool display = false);
   void initDash();
-  void initTimer();
+  void initTime();
   void initConfig();
 
   void i2cScanner();
@@ -46,9 +50,15 @@ public:
   void forceStartWiFi();
   void testHTTPRequest();
 
+  bool timeToSync();
+  bool dailySync();
+  bool dailySyncServer();
+
   void SLEEP();
 
 private:
+  //RTC_DATA_ATTR bool _ALREADY_SYNCED = false;
+  //RTC_DATA_ATTR bool _SYNC_NOW = false;
   int _BATTERY = 0;
   int _SENSOR = 0;
   int _WIFI = 0;
@@ -63,11 +73,11 @@ private:
   String TimeStr, DateStr, ErrorMessage; // strings to hold time and date
   const char *TZ_INFO = "CET-1CEST,M3.5.0,M10.5.0/3";
 
-  int StartTime = 0, CurrentHour = 0, CurrentMin = 0, CurrentSec = 0;
-  long SleepDuration = 15;
+  int StartTime = 0;
+  //RTC_DATA_ATTR int CurrentHour = 0, CurrentMin = 0, CurrentSec = 0;
+  long SleepDuration = 15; //Will wake up on a rounded incriment of this time in minute (eg. 15 = X:00, X:15, X:30x X:45)
 
   int wifi_signal;
-  int batteryPercent;
 
   float temp1;
   float temp2;

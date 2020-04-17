@@ -63,6 +63,11 @@ int integTime = 100;
 int ID;
 String dataMessage;
 
+RTC_DATA_ATTR bool _ALREADY_SYNCED = false;
+RTC_DATA_ATTR bool _SYNC_NOW = false;
+
+RTC_DATA_ATTR int CurrentHour = 0, CurrentMin = 0, CurrentSec = 0;
+
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 MimirTesting::MimirTesting()
@@ -293,9 +298,28 @@ void MimirTesting::initDash()
     display.update();
 }
 
-void MimirTesting::initTimer()
+void MimirTesting::initTime()
 {
     StartTime = millis();
+    //Update the time approximately
+    CurrentMin += SleepDuration;
+    if (CurrentMin >= 60)
+    {
+        CurrentMin = 0;
+        CurrentHour += 1;
+        if (CurrentHour >= 24)
+        {
+            CurrentHour = 0;
+            // Reset the Sync for the day
+            _ALREADY_SYNCED = false;
+        }
+    }
+
+    if (WiFi.status() == WL_CONNECTED)
+    {
+        wifi_signal = WiFi.RSSI();
+        SetupTime();
+    }
 }
 
 void MimirTesting::forceStartWiFi()
@@ -524,12 +548,67 @@ void MimirTesting::sendData(bool _display)
             display.println(httpResponseCode);
             blinkPixel(1, 255, 0, 0, 2);
         }
+
+        http.end();
+    }
+}
+
+bool MimirTesting::timeToSync()
+{
+    if (_SYNC_NOW && !_ALREADY_SYNCED)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    };
+}
+
+bool MimirTesting::dailySync()
+{
+    if (SetupTime() && dailySyncServer())
+    {
+        _ALREADY_SYNCED = true;
+        return true;
+    }
+    else
+        return false;
+}
+
+bool MimirTesting::dailySyncServer()
+{
+    if ((WiFi.status() == WL_CONNECTED))
+    {
+
+        HTTPClient http;
+        //FIX This needs to be where it requests the servers
+        http.begin("https://us-central1-mimirhome-app.cloudfunctions.net/sensorData/add");
+        http.addHeader("Content-Type", "application/json");
+        int httpResponseCode = http.GET();
+        String response = http.getString();
+
+        if (httpResponseCode > 0)
+        {
+
+            display.println("Data Sent!");
+            display.println(httpResponseCode);
+            display.println(response);
+            return true;
+        }
+        else
+        {
+            display.println("ERROR");
+            display.println("Error on sending POST request");
+            display.println(httpResponseCode);
+            return false;
+        }
         getIPAddress();
 
         http.end();
     }
     else
-        initWIFI();
+        return false;
 }
 
 void MimirTesting::DisplaySentData(int httpResponseCode, String response)
@@ -782,13 +861,13 @@ void MimirTesting::readBattery(bool _display)
     float voltage = getBatteryVoltage(); //output value
     const float battery_max = 4.2;       //maximum voltage of battery
     const float battery_min = 3.3;       //minimum voltage of battery before shutdown
-    batteryPercent = roundf(((voltage - battery_min) / (battery_max - battery_min)) * 100);
+    BATTERY_PERCENT = roundf(((voltage - battery_min) / (battery_max - battery_min)) * 100);
 
     display.fillScreen(GxEPD_WHITE);
     display.setCursor(2, 20);
     display.println("Battery Level...");
     printValue(voltage, "Voltage", "V");
-    printValue(batteryPercent, "Battery", "%");
+    printValue(BATTERY_PERCENT, "Battery", "%");
 
     DisplayBatteryIcon(10, 200);
     DisplayWiFiIcon(40, 200);
@@ -825,14 +904,14 @@ void MimirTesting::DisplayBatteryIcon(int x, int y)
 {
     display.drawRect(x, y - 10, 20, 10, GxEPD_BLACK); // Draw battery pack
     display.fillRect(x + 20, y - 7, 3, 5, GxEPD_BLACK);
-    if (batteryPercent < 20) //Draw Warning Battery
+    if (BATTERY_PERCENT < 20) //Draw Warning Battery
     {
         display.fillCircle(x - 18, y + 12, 2, GxEPD_BLACK);
         display.fillRect(x - 14, y + 11, 10, 3, GxEPD_BLACK);
     }
-    else if (batteryPercent < 50) // Draw Percent Battery
+    else if (BATTERY_PERCENT < 50) // Draw Percent Battery
     {
-        display.fillRect(x + 2, y - 8, 16 * batteryPercent / 100.0, 6, GxEPD_BLACK);
+        display.fillRect(x + 2, y - 8, 16 * BATTERY_PERCENT / 100.0, 6, GxEPD_BLACK);
     }
     else // Draw Charging Battery
     {
