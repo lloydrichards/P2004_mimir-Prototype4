@@ -75,7 +75,7 @@ private:
 
   int StartTime = 0;
   //RTC_DATA_ATTR int CurrentHour = 0, CurrentMin = 0, CurrentSec = 0;
-  long SleepDuration = 15; //Will wake up on a rounded incriment of this time in minute (eg. 15 = X:00, X:15, X:30x X:45)
+  long SleepDuration = 5; //Will wake up on a rounded incriment of this time in minute (eg. 15 = X:00, X:15, X:30x X:45)
 
   int wifi_signal;
 

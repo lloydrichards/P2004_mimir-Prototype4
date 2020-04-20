@@ -8,14 +8,18 @@ void setup()
 {
   pinMode(39, INPUT);
   mimirTesting.initTime();
+  mimirTesting.initDisplay(115200);
+  Serial.println(digitalRead(39));
   if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_TIMER)
   {
+    Serial.println("Initializing...");
     if (digitalRead(39) == LOW)
     {
+      Serial.println("Button Pressed...");
       mimirTesting.forceStartWiFi();
     }
     Wire.begin();
-    mimirTesting.initDisplay(115200);
+
     mimirTesting.initNeoPixels(50);
     mimirTesting.initConfig();
     mimirTesting.initSensors();
@@ -25,7 +29,6 @@ void setup()
   {
     mimirTesting.dailySync();
   }
-
   mimirTesting.DisplayDeviceInfo();
 
   //mimirTesting.initDash();
