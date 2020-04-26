@@ -9,26 +9,44 @@
 #include "Arduino.h"
 #include <Wire.h>
 #include <SD.h>
+#include "time.h"
 #include <WiFiManager.h>
+
+enum alignment
+{
+  LEFT,
+  RIGHT,
+  CENTER
+};
 
 class MimirTesting
 {
 public:
   MimirTesting();
+
   void initDisplay(int baudRate = 115200);
   void initNeoPixels(int brightness = 50);
-  void initSensors();
-  void initWIFI();
+  void initSensors(bool display = false);
+  void initWIFI(bool display = false);
+  void initDash();
+  void initTimer();
+  void initConfig();
+
   void i2cScanner();
   void testNeoPixels(int repeat = 3, int delay = 500);
-  void currentStatus();
-  void testBattery();
+
+  void readSensors(bool display = false);
+  void readBattery(bool display = false);
+
+  void DisplayDeviceInfo();
+
+  void sendData(bool display = false);
+  void WiFi_ON();
+  void WiFi_OFF();
+  void forceStartWiFi();
   void testHTTPRequest();
-  bool beginBH1715(uint8_t addr, TwoWire &wirePort = Wire);
-  float readBH1715(int addr);
-  void readSensors();
-  void sendData();
-  void printSensors();
+
+  void SLEEP();
 
 private:
   int _BATTERY = 0;
@@ -38,34 +56,59 @@ private:
   int _MICROSD = 0;
 
   String _IP_ADDRESS;
-  String _USER = "Lloyd Richards";
-  String _USER_ID = "P2003_PROTOTYPE";
-  String _DEVICE_ID = "PROTOTYPE3_03";
+  char _USER[40];
+  char _USER_ID[40];
+  char _DEVICE_ID[40];
+
+  String TimeStr, DateStr, ErrorMessage; // strings to hold time and date
+  const char *TZ_INFO = "CET-1CEST,M3.5.0,M10.5.0/3";
+
+  int StartTime = 0, CurrentHour = 0, CurrentMin = 0, CurrentSec = 0;
+  long SleepDuration = 15;
+
+  int wifi_signal;
+  int batteryPercent;
 
   float temp1;
   float temp2;
   float temp3;
-  float temp4;
+  float alt;
   float hum1;
   float hum2;
-  float hum3;
   float pres;
   float lux1;
   float lux2;
-  float lux3;
-  float lux4;
-  float avgLux;
   float eCO2;
   float tVOC;
 
-  uint32_t statusColour(int status);
-  void setStatus(int status, int newStatus);
+  bool SHT31D_L_STATUS = false;
+  bool SHT31D_H_STATUS = false;
+  bool VEML6030_STATUS = false;
+  bool TEMT600_STATUS = false;
+  bool CCS811B_STATUS = false;
+  bool BMP280_STATUS = false;
+
   void writeFile(fs::FS &fs, const char *path, const char *message);
   void appendFile(fs::FS &fs, const char *path, const char *message);
-  void printValue(float value, const char *type, const char *unit);
+  void saveConfig();
+
+  void printValue(float value, const char *type, const char *unit, int decimel = 2);
   void getIPAddress();
-  void burnReading(int repeat = 8);
-  void busyLED(int led, int repeat = 3, int duration = 10);
+
+  void DisplayWiFiIcon(int x, int y);
+  void DisplayBatteryIcon(int x, int y);
+  void DisplaySensors();
+  void DisplayReadings();
+  void DisplayWiFiSetup();
+  void DisplayWiFiCredentials();
+  void DisplaySentData(int httpResponseCode, String response);
+
+  void drawString(int x, int y, String text, alignment align);
+  void blinkPixel(int pixel, int R = 255, int G = 0, int B = 0, int repeat = 1);
+
+  bool SetupTime();
+  bool UpdateLocalTime();
+  float getBatteryVoltage();
   String packageJSON();
 
   static uint32_t Colour(uint8_t r, uint8_t g, uint8_t b)

@@ -2,24 +2,34 @@
 #include <Wire.h>
 #include <MimirTesting.h>
 
-MimirTesting mimirTesting;
+MimirTesting mimirTesting; /* Time ESP32 will go to sleep (in seconds) */
 
 void setup()
 {
-
-  Wire.begin();
-  mimirTesting.initDisplay(115200);
-  mimirTesting.initNeoPixels(50);
-  mimirTesting.initSensors();
-  mimirTesting.initWIFI();
-  mimirTesting.i2cScanner();
+  if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_TIMER)
+  {
+    Serial.begin(115200);
+    Wire.begin();
+    mimirTesting.initDisplay(115200);
+    mimirTesting.initNeoPixels(50);
+    mimirTesting.initConfig();
+    mimirTesting.initSensors();
+    mimirTesting.initWIFI();
+  }
+  pinMode(39, INPUT);
+  mimirTesting.initTimer();
+  //mimirTesting.initDash();
+  mimirTesting.readBattery();
+  mimirTesting.readSensors(true);
+  // mimirTesting.WiFi_ON();
+  // mimirTesting.sendData(true);
+  // mimirTesting.WiFi_OFF();
+  //mimirTesting.forceStartWiFi();
 }
 
 void loop()
 {
-  mimirTesting.currentStatus();
-  mimirTesting.readSensors();
-  mimirTesting.sendData();
-  mimirTesting.printSensors();
-  delay(60*1000);
+  mimirTesting.DisplayDeviceInfo();
+  mimirTesting.readBattery(true);
+  delay(5000);
 }
