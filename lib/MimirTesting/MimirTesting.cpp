@@ -34,6 +34,7 @@
 #include <GxGDEH0213B73/GxGDEH0213B73.h>
 #include <Fonts/FreeSans9pt7b.h>
 #include "epaper_fonts.h"
+#include "essencial_icon_32.h"
 
 //Set Screen SPI
 #include <GxIO/GxIO_SPI/GxIO_SPI.h>
