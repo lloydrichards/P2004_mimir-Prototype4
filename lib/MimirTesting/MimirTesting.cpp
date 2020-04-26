@@ -35,6 +35,7 @@
 #include <Fonts/FreeSans9pt7b.h>
 #include "epaper_fonts.h"
 #include "essencial_icon_32.h"
+#include "mimir_splash.h"
 
 //Set Screen SPI
 #include <GxIO/GxIO_SPI/GxIO_SPI.h>
@@ -73,38 +74,8 @@ MimirTesting::MimirTesting()
 void MimirTesting::initDisplay(int baudRate)
 {
     display.init(baudRate);
+    display.drawExampleBitmap(mimir_splash, sizeof(mimir_splash));
     display.setTextColor(GxEPD_BLACK);
-    display.setRotation(0);
-    display.setCursor(0, 20);
-
-    display.setFont(&Lato_Regular_10);
-    display.print("Temp: ");
-    display.setFont(&Roboto_Slab_Regular_16);
-    display.print("21.6");
-    display.println(" C");
-    display.println();
-
-    display.setFont(&Lato_Regular_10);
-    display.print("Humi: ");
-    display.setFont(&Roboto_Slab_Regular_16);
-    display.print("37");
-    display.println(" %");
-    display.println();
-
-    display.setFont(&Lato_Regular_10);
-    display.print("Pres: ");
-    display.setFont(&Roboto_Slab_Regular_16);
-    display.print("2199");
-    display.println(" Hpa");
-    display.println();
-
-    display.setFont(&Lato_Regular_10);
-    display.print("CO2: ");
-    display.setFont(&Roboto_Slab_Regular_16);
-    display.print("1200");
-    display.println(" ppm");
-    display.println();
-
     display.setFont(&Lato_Regular_10);
     display.update();
     delay(1000);
@@ -793,6 +764,9 @@ void MimirTesting::readBattery(bool _display)
 
     DisplayBatteryIcon(10, 200);
     DisplayWiFiIcon(40, 200);
+    display.drawBitmap(10, 150, batteryCharge_32, 32, 32, GxEPD_BLACK);
+    display.drawBitmap(45, 150, umbrellaRain_48, 48, 48, GxEPD_BLACK);
+
     display.drawLine(0, 201, 80, 201, GxEPD_BLACK);
 
     display.update();
