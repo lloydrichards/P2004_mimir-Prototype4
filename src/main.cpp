@@ -18,17 +18,18 @@ void setup()
   }
   pinMode(39, INPUT);
   mimirTesting.initTimer();
-  mimirTesting.initDash();
+  //mimirTesting.initDash();
   mimirTesting.readBattery();
   mimirTesting.readSensors(true);
-  mimirTesting.WiFi_ON();
-  mimirTesting.sendData(true);
-  mimirTesting.WiFi_OFF();
+  // mimirTesting.WiFi_ON();
+  // mimirTesting.sendData(true);
+  // mimirTesting.WiFi_OFF();
   //mimirTesting.forceStartWiFi();
 }
 
 void loop()
 {
   mimirTesting.DisplayDeviceInfo();
+  mimirTesting.readBattery(true);
   delay(5000);
 }

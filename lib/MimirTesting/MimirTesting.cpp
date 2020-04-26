@@ -42,7 +42,7 @@
 GxIO_Class io(SPI, /*CS=5*/ SS, /*DC=*/17, /*RST=*/16); // arbitrary selection of 17, 16
 GxEPD_Class display(io, /*RST=*/16, /*BUSY=*/4);
 
-#define BATTERY_SENSOR_PIN 39
+#define BATTERY_SENSOR_PIN 35
 #define LED_PIN 25
 #define LED_COUNT 5
 //Define Sensors
@@ -792,7 +792,7 @@ void MimirTesting::readBattery(bool _display)
 
     DisplayBatteryIcon(10, 200);
     DisplayWiFiIcon(40, 200);
-    display.drawLine(0, 200, 80, 200, GxEPD_BLACK);
+    display.drawLine(0, 201, 80, 201, GxEPD_BLACK);
 
     display.update();
 }
@@ -813,11 +813,15 @@ float MimirTesting::getBatteryVoltage()
     }
     // calculate the voltage
     voltage = sum / (float)500;
-    voltage = (voltage * 5.159) / 4096.0; //for internal 1.1v reference
+    Serial.print("Battery Analog Read: ");
+    Serial.println(sum);
+    voltage = (voltage * 3.476) / 4096.0; //for internal 1.1v reference
                                           // use if added divider circuit
-    //voltage = voltage / (R2 / (R1 + R2));
+    voltage = voltage / (R2 / (R1 + R2));
     //round value by two precision
     voltage = roundf(voltage * 100) / 100;
+    Serial.print("Voltage: ");
+    Serial.println(voltage);
     return voltage;
 }
 
@@ -827,10 +831,10 @@ void MimirTesting::DisplayBatteryIcon(int x, int y)
     display.fillRect(x + 20, y - 7, 3, 5, GxEPD_BLACK);
     if (batteryPercent < 20) //Draw Warning Battery
     {
-        display.fillCircle(x - 18, y + 12, 2, GxEPD_BLACK);
-        display.fillRect(x - 14, y + 11, 10, 3, GxEPD_BLACK);
+        display.fillCircle(x + 4, y - 5, 2, GxEPD_BLACK);
+        display.fillRect(x + 8, y - 6, 10, 3, GxEPD_BLACK);
     }
-    else if (batteryPercent < 50) // Draw Percent Battery
+    else if (batteryPercent < 100) // Draw Percent Battery
     {
         display.fillRect(x + 2, y - 8, 16 * batteryPercent / 100.0, 6, GxEPD_BLACK);
     }
