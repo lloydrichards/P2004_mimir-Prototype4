@@ -34,7 +34,10 @@
 #include <GxGDEH0213B73/GxGDEH0213B73.h>
 #include <Fonts/FreeSans9pt7b.h>
 #include "epaper_fonts.h"
-#include "essencial_icon_32.h"
+#include "ui_icons_24.h"
+#include "ui_icons_36.h"
+#include "ui_icons_48.h"
+#include "ui_icons_64.h"
 #include "mimir_splash.h"
 
 //Set Screen SPI
@@ -762,12 +765,25 @@ void MimirTesting::readBattery(bool _display)
     printValue(voltage, "Voltage", "V");
     printValue(batteryPercent, "Battery", "%");
 
-    DisplayBatteryIcon(10, 200);
-    DisplayWiFiIcon(40, 200);
-    display.drawBitmap(10, 150, batteryCharge_32, 32, 32, GxEPD_BLACK);
-    display.drawBitmap(45, 150, umbrellaRain_48, 48, 48, GxEPD_BLACK);
+    display.drawBitmap(10, 50, battery_24, 24, 24, GxEPD_BLACK);
+    display.drawBitmap(35, 50, batteryCharge_24, 24, 24, GxEPD_BLACK);
+    display.drawBitmap(60, 50, graphBar_24, 24, 24, GxEPD_BLACK);
+    display.drawBitmap(85, 50, infomation_24, 24, 24, GxEPD_BLACK);
 
-    display.drawLine(0, 201, 80, 201, GxEPD_BLACK);
+    display.drawBitmap(10, 75, store_36, 36, 36, GxEPD_BLACK);
+    display.drawBitmap(50, 75, music_36, 36, 36, GxEPD_BLACK);
+    display.drawBitmap(90, 75, home_36, 36, 36, GxEPD_BLACK);
+
+    display.drawBitmap(20, 110, folder_48, 48, 48, GxEPD_BLACK);
+    display.fillRect(20,132,24,24,GxEPD_WHITE);
+    display.drawBitmap(20, 110, miniLeftAdd_48, 48, 48, GxEPD_BLACK);
+    
+    display.drawBitmap(70, 110, fileFill_48, 48, 48, GxEPD_BLACK);
+    display.fillRect(70,132,24,24,GxEPD_WHITE);
+    display.drawBitmap(70, 110, miniLeftAccept_48, 48, 48, GxEPD_BLACK);
+
+    display.drawBitmap(0, 160, dashboard_64, 64, 64, GxEPD_BLACK);
+    display.drawBitmap(65, 160, chat_64, 64, 64, GxEPD_BLACK);
 
     display.update();
 }
