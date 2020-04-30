@@ -17,7 +17,6 @@ void setup()
     mimirTesting.initSensors();
     mimirTesting.initWIFI();
   }
-  pinMode(39, INPUT);
   mimirTesting.initTimer();
   //mimirTesting.initDash();
   mimirTesting.readBattery();

@@ -77,14 +77,12 @@ private:
   float hum2;
   float pres;
   float lux1;
-  float lux2;
   float eCO2;
   float tVOC;
 
   bool SHT31D_L_STATUS = false;
   bool SHT31D_H_STATUS = false;
   bool VEML6030_STATUS = false;
-  bool TEMT600_STATUS = false;
   bool CCS811_STATUS = false;
   bool BMP280_STATUS = false;
 

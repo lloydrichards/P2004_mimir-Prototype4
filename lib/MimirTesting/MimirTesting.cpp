@@ -90,7 +90,7 @@ void MimirTesting::initNeoPixels(int brightness)
     strip.begin();
     strip.setBrightness(brightness);
     strip.show(); // Turn OFF all pixels ASAP
-    testNeoPixels();
+    testNeoPixels(5, 1000);
 }
 
 void MimirTesting::initSensors(bool _display)
@@ -103,10 +103,13 @@ void MimirTesting::initSensors(bool _display)
         veml6030.setIntegTime(integTime);
         VEML6030_STATUS = true;
     }
-    pinMode(32, INPUT);
-    TEMT600_STATUS = !isnan(analogRead(32));
-    CCS811_STATUS = ccs811.begin();
-    ccs811.start(CCS811_MODE_1SEC);
+
+    if (ccs811.begin())
+    {
+        ccs811.start(CCS811_MODE_1SEC);
+        CCS811_STATUS = true;
+    };
+
     BMP280_STATUS = bmp280.begin(addrbmp280);
 
     if (_display)
@@ -127,13 +130,10 @@ void MimirTesting::DisplaySensors()
                      : display.println("VEML6030: O");
 
     !CCS811_STATUS ? display.println("CCS811: X")
-                    : display.println("CCS811: O");
+                   : display.println("CCS811: O");
 
     !BMP280_STATUS ? display.println("bmp280: X")
                    : display.println("bmp280: O");
-
-    !TEMT600_STATUS ? display.println("TEMT600: O")
-                    : display.println("TEMT600: X");
 
     display.update();
 }
@@ -150,10 +150,10 @@ void MimirTesting::initWIFI(bool _display)
     wifiManager.addParameter(&custom_USER_ID);
     wifiManager.addParameter(&custom_DEVICE_ID);
 
-    strip.setPixelColor(2, strip.Color(255, 255, 0));
+    strip.setPixelColor(4, strip.Color(255, 255, 0));
     strip.show();
     wifiManager.autoConnect("mimirAP");
-    strip.setPixelColor(2, strip.Color(0, 255, 0));
+    strip.setPixelColor(4, strip.Color(0, 255, 0));
     strip.show();
     if (_display)
         DisplayWiFiCredentials();
@@ -164,7 +164,7 @@ void MimirTesting::initWIFI(bool _display)
     }
     else
     {
-        strip.setPixelColor(2, strip.Color(255, 0, 0));
+        strip.setPixelColor(4, strip.Color(255, 0, 0));
         strip.show();
     }
 
@@ -319,16 +319,16 @@ void MimirTesting::WiFi_ON()
     WiFiManager wifiManager;
     wifiManager.autoConnect("mimirAP");
     wifi_signal = WiFi.RSSI();
-    strip.setPixelColor(2, strip.Color(0, 255, 0));
+    strip.setPixelColor(4, strip.Color(0, 255, 0));
     strip.show();
 };
 void MimirTesting::WiFi_OFF()
 {
-    strip.setPixelColor(2, strip.Color(255, 255, 0));
+    strip.setPixelColor(4, strip.Color(255, 255, 0));
     strip.show();
     WiFi.disconnect();
     WiFi.mode(WIFI_OFF);
-    strip.setPixelColor(2, strip.Color(0, 0, 0));
+    strip.setPixelColor(4, strip.Color(0, 0, 0));
     strip.show();
 };
 
@@ -336,13 +336,11 @@ void MimirTesting::SLEEP()
 {
     long SleepTimer = (SleepDuration * 60 - ((CurrentMin % SleepDuration) * 60 + CurrentSec)) + 30; //Some ESP32 are too fast to maintain accurate time
     esp_sleep_enable_timer_wakeup(SleepTimer * 1000000LL);
-    display.setCursor(2, 120);
-    display.fillRect(0, 100, GxEPD_WIDTH, GxEPD_HEIGHT - 100, GxEPD_WHITE);
-    display.updateWindow(0, 100, GxEPD_WIDTH, GxEPD_HEIGHT - 100);
-    display.println("Entering " + String(SleepTimer) + "-secs of sleep time");
-    display.println("Awake for : " + String((millis() - StartTime) / 1000.0, 3) + "-secs");
-    display.println("Starting deep-sleep...");
-    display.updateWindow(0, 100, GxEPD_WIDTH, GxEPD_HEIGHT - 100);
+
+    Serial.println("Entering " + String(SleepTimer) + "-secs of sleep time");
+    Serial.println("Awake for : " + String((millis() - StartTime) / 1000.0, 3) + "-secs");
+    Serial.println("Starting deep-sleep...");
+
     delay(100);
     display.powerDown();
 
@@ -368,25 +366,35 @@ void MimirTesting::readSensors(bool _display)
     pres = (float)bmp280.readPressure() / 100;
     alt = (float)bmp280.readAltitude(SEALEVELPRESSURE_HPA);
     lux1 = (float)veml6030.readLight();
-    lux2 = (float)(analogRead(32) * 0.9765625);
-    ccs811.read(&eco2,&etvoc,&errstat,&raw);
+    ccs811.read(&eco2, &etvoc, &errstat, &raw);
     eCO2 = (float)eco2;
     tVOC = (float)etvoc;
 
-     Serial.print("CCS811: ");
-  if( errstat==CCS811_ERRSTAT_OK ) {
-    Serial.print("eco2=");  Serial.print(eco2);  Serial.print(" ppm  ");
-    Serial.print("etvoc="); Serial.print(etvoc); Serial.print(" ppb  ");  
-  } else if( errstat==CCS811_ERRSTAT_OK_NODATA ) {
-    Serial.print("waiting for (new) data");
-  } else if( errstat & CCS811_ERRSTAT_I2CFAIL ) { 
-    Serial.print("I2C error");
-  } else {
-    Serial.print( "error: " );
-    Serial.print( ccs811.errstat_str(errstat) ); 
-  }
-  Serial.println();
-  
+    // Serial.print("CCS811: ");
+    // if (errstat == CCS811_ERRSTAT_OK)
+    // {
+    //     Serial.print("eco2=");
+    //     Serial.print(eco2);
+    //     Serial.print(" ppm  ");
+    //     Serial.print("etvoc=");
+    //     Serial.print(etvoc);
+    //     Serial.print(" ppb  ");
+    // }
+    // else if (errstat == CCS811_ERRSTAT_OK_NODATA)
+    // {
+    //     Serial.print("waiting for (new) data");
+    // }
+    // else if (errstat & CCS811_ERRSTAT_I2CFAIL)
+    // {
+    //     Serial.print("I2C error");
+    // }
+    // else
+    // {
+    //     Serial.print("error: ");
+    //     Serial.print(ccs811.errstat_str(errstat));
+    // }
+    // Serial.println();
+
     if (_display)
         DisplayReadings();
 }
@@ -417,13 +425,10 @@ void MimirTesting::DisplayDeviceInfo()
                      : display.println("VEML6030: O");
 
     !CCS811_STATUS ? display.println("CCS811: X")
-                    : display.println("CCS811: O");
+                   : display.println("CCS811: O");
 
     !BMP280_STATUS ? display.println("bmp280: X")
                    : display.println("bmp280: O");
-
-    !TEMT600_STATUS ? display.println("TEMT600: O")
-                    : display.println("TEMT600: X");
 
     display.println("____________");
     display.print("Battery: ");
@@ -477,11 +482,6 @@ void MimirTesting::DisplayReadings()
         printValue(pres, "P", "hPa");
         printValue(alt, "Alt", "m");
         display.println("____________");
-    }
-
-    if (TEMT600_STATUS)
-    {
-        printValue(lux2, "L2", "lux");
     }
 
     display.update();
@@ -749,7 +749,6 @@ String MimirTesting::packageJSON()
     data["Pressure (bmp280)"] = pres;
     data["Altitude (bmp280)"] = pres;
     data["Luminance (VEML6030)"] = lux1;
-    data["Luminance (TEMT600)"] = lux2;
     data["eCO2 (CCS811)"] = eCO2;
     data["VOC (CCS811)"] = tVOC;
 
@@ -784,25 +783,6 @@ void MimirTesting::readBattery(bool _display)
     printValue(voltage, "Voltage", "V");
     printValue(batteryPercent, "Battery", "%");
 
-    display.drawBitmap(10, 50, battery_24, 24, 24, GxEPD_BLACK);
-    display.drawBitmap(35, 50, batteryCharge_24, 24, 24, GxEPD_BLACK);
-    display.drawBitmap(60, 50, graphBar_24, 24, 24, GxEPD_BLACK);
-    display.drawBitmap(85, 50, infomation_24, 24, 24, GxEPD_BLACK);
-
-    display.drawBitmap(10, 75, store_36, 36, 36, GxEPD_BLACK);
-    display.drawBitmap(50, 75, music_36, 36, 36, GxEPD_BLACK);
-    display.drawBitmap(90, 75, home_36, 36, 36, GxEPD_BLACK);
-
-    display.drawBitmap(20, 110, folder_48, 48, 48, GxEPD_BLACK);
-    display.fillRect(20,132,24,24,GxEPD_WHITE);
-    display.drawBitmap(20, 110, miniLeftAdd_48, 48, 48, GxEPD_BLACK);
-    
-    display.drawBitmap(70, 110, fileFill_48, 48, 48, GxEPD_BLACK);
-    display.fillRect(70,132,24,24,GxEPD_WHITE);
-    display.drawBitmap(70, 110, miniLeftAccept_48, 48, 48, GxEPD_BLACK);
-
-    display.drawBitmap(0, 160, dashboard_64, 64, 64, GxEPD_BLACK);
-    display.drawBitmap(65, 160, chat_64, 64, 64, GxEPD_BLACK);
 
     display.update();
 }
@@ -823,8 +803,6 @@ float MimirTesting::getBatteryVoltage()
     }
     // calculate the voltage
     voltage = sum / (float)500;
-    Serial.print("Battery Analog Read: ");
-    Serial.println(sum);
     voltage = (voltage * 3.476) / 4096.0; //for internal 1.1v reference
                                           // use if added divider circuit
     voltage = voltage / (R2 / (R1 + R2));
