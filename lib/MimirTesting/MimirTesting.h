@@ -85,7 +85,7 @@ private:
   bool SHT31D_H_STATUS = false;
   bool VEML6030_STATUS = false;
   bool TEMT600_STATUS = false;
-  bool CCS811B_STATUS = false;
+  bool CCS811_STATUS = false;
   bool BMP280_STATUS = false;
 
   void writeFile(fs::FS &fs, const char *path, const char *message);

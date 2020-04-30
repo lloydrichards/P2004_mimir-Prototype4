@@ -12,6 +12,7 @@ void setup()
     Wire.begin();
     mimirTesting.initDisplay(115200);
     mimirTesting.initNeoPixels(50);
+    mimirTesting.i2cScanner();
     mimirTesting.initConfig();
     mimirTesting.initSensors();
     mimirTesting.initWIFI();
@@ -30,6 +31,8 @@ void setup()
 void loop()
 {
   mimirTesting.DisplayDeviceInfo();
+  mimirTesting.readSensors(true);
+  delay(5000);
   mimirTesting.readBattery(true);
   delay(5000);
 }

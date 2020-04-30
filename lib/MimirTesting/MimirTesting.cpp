@@ -17,15 +17,15 @@
 #include "Adafruit_SHT31.h"                         //https://github.com/adafruit/Adafruit_SHT31
 #include "SparkFun_VEML6030_Ambient_Light_Sensor.h" //https://github.com/sparkfun/SparkFun_Ambient_Light_Sensor_Arduino_Library
 #include <Adafruit_BMP280.h>
-#include "ccs811.h"
+#include "ccs811.h" //https://github.com/maarten-pennings/CCS811
 
 //I2C Addresses
 #define addrSHT31D_L 0x44
 #define addrSHT31D_H 0x45
 #define addrBH1715_L 0x23
 #define addrBH1715_H 0x5C
-#define addrVEML6030 0x10
-#define addrCCS811B 0x5A
+#define addrVEML6030 0x48
+#define addrCCS811 0x5A
 #define addrbmp280 0x76
 
 #include <Adafruit_NeoPixel.h>
@@ -48,13 +48,13 @@ GxIO_Class io(SPI, /*CS=5*/ SS, /*DC=*/17, /*RST=*/16); // arbitrary selection o
 GxEPD_Class display(io, /*RST=*/16, /*BUSY=*/4);
 
 #define BATTERY_SENSOR_PIN 35
-#define LED_PIN 25
+#define LED_PIN 19
 #define LED_COUNT 5
 //Define Sensors
 Adafruit_SHT31 sht31_L = Adafruit_SHT31();
 Adafruit_SHT31 sht31_H = Adafruit_SHT31();
 SparkFun_Ambient_Light veml6030(addrVEML6030);
-CCS811 ccs811B(33);
+CCS811 ccs811(36);
 Adafruit_BMP280 bmp280;
 
 //VEML6030 settings
@@ -90,6 +90,7 @@ void MimirTesting::initNeoPixels(int brightness)
     strip.begin();
     strip.setBrightness(brightness);
     strip.show(); // Turn OFF all pixels ASAP
+    testNeoPixels();
 }
 
 void MimirTesting::initSensors(bool _display)
@@ -104,7 +105,8 @@ void MimirTesting::initSensors(bool _display)
     }
     pinMode(32, INPUT);
     TEMT600_STATUS = !isnan(analogRead(32));
-    CCS811B_STATUS = ccs811B.begin();
+    CCS811_STATUS = ccs811.begin();
+    ccs811.start(CCS811_MODE_1SEC);
     BMP280_STATUS = bmp280.begin(addrbmp280);
 
     if (_display)
@@ -124,8 +126,8 @@ void MimirTesting::DisplaySensors()
     !VEML6030_STATUS ? display.println("VEML6030: X")
                      : display.println("VEML6030: O");
 
-    !CCS811B_STATUS ? display.println("CCS811B: X")
-                    : display.println("CCS811B: O");
+    !CCS811_STATUS ? display.println("CCS811: X")
+                    : display.println("CCS811: O");
 
     !BMP280_STATUS ? display.println("bmp280: X")
                    : display.println("bmp280: O");
@@ -356,6 +358,8 @@ void MimirTesting::SLEEP()
 
 void MimirTesting::readSensors(bool _display)
 {
+    uint16_t eco2, etvoc, errstat, raw;
+
     temp1 = (float)sht31_L.readTemperature();
     temp2 = (float)sht31_H.readTemperature();
     temp3 = (float)bmp280.readTemperature();
@@ -365,9 +369,24 @@ void MimirTesting::readSensors(bool _display)
     alt = (float)bmp280.readAltitude(SEALEVELPRESSURE_HPA);
     lux1 = (float)veml6030.readLight();
     lux2 = (float)(analogRead(32) * 0.9765625);
-    //ccs811B.readData();
-    //eCO2 = (float)ccs811B.geteCO2();
-    //tVOC = (float)ccs811B.getTVOC();
+    ccs811.read(&eco2,&etvoc,&errstat,&raw);
+    eCO2 = (float)eco2;
+    tVOC = (float)etvoc;
+
+     Serial.print("CCS811: ");
+  if( errstat==CCS811_ERRSTAT_OK ) {
+    Serial.print("eco2=");  Serial.print(eco2);  Serial.print(" ppm  ");
+    Serial.print("etvoc="); Serial.print(etvoc); Serial.print(" ppb  ");  
+  } else if( errstat==CCS811_ERRSTAT_OK_NODATA ) {
+    Serial.print("waiting for (new) data");
+  } else if( errstat & CCS811_ERRSTAT_I2CFAIL ) { 
+    Serial.print("I2C error");
+  } else {
+    Serial.print( "error: " );
+    Serial.print( ccs811.errstat_str(errstat) ); 
+  }
+  Serial.println();
+  
     if (_display)
         DisplayReadings();
 }
@@ -397,8 +416,8 @@ void MimirTesting::DisplayDeviceInfo()
     !VEML6030_STATUS ? display.println("VEML6030: X")
                      : display.println("VEML6030: O");
 
-    !CCS811B_STATUS ? display.println("CCS811B: X")
-                    : display.println("CCS811B: O");
+    !CCS811_STATUS ? display.println("CCS811: X")
+                    : display.println("CCS811: O");
 
     !BMP280_STATUS ? display.println("bmp280: X")
                    : display.println("bmp280: O");
@@ -445,7 +464,7 @@ void MimirTesting::DisplayReadings()
         display.println("____________");
     }
 
-    if (CCS811B_STATUS)
+    if (CCS811_STATUS)
     {
         printValue(eCO2, "CO2", "ppm");
         printValue(tVOC, "VOC", "ppb");
