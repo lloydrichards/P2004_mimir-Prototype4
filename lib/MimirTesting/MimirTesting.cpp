@@ -142,7 +142,7 @@ void MimirTesting::initSensors(bool _display)
 
     if (ccs811.begin())
     {
-        ccs811.start(CCS811_MODE_1SEC);
+        ccs811.start(CCS811_MODE_60SEC);
         CCS811_STATUS = SUCCESS;
     }
     else

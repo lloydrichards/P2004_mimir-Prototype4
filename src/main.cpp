@@ -23,6 +23,7 @@ void setup()
   mimirTesting.WiFi_OFF();
   mimirTesting.logData();
   mimirTesting.readBattery();
+  mimirTesting.readSensors(true);
   mimirTesting.statusNeoPixels();
   //mimirTesting.forceStartWiFi();
   mimirTesting.SLEEP();
