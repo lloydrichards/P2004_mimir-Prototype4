@@ -6,18 +6,15 @@ MimirTesting mimirTesting; /* Time ESP32 will go to sleep (in seconds) */
 void setup()
 {
   mimirTesting.initTimer();
-  if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_TIMER)
-  {
-    Serial.begin(115200);
-    Wire.begin();
-    mimirTesting.initDisplay(115200);
-    mimirTesting.initNeoPixels(35);
-    //mimirTesting.i2cScanner();
-    mimirTesting.initConfig();
-    mimirTesting.initMicroSD();
-    mimirTesting.initSensors();
-    mimirTesting.initWIFI();
-  }
+  mimirTesting.WAKEUP_REASON();
+  Serial.begin(115200);
+  mimirTesting.initDisplay(115200);
+  mimirTesting.initNeoPixels();
+  //mimirTesting.i2cScanner();
+  mimirTesting.initConfig();
+  mimirTesting.initMicroSD();
+  mimirTesting.initSensors();
+  mimirTesting.initWIFI();
   //mimirTesting.initDash();
   mimirTesting.readBattery();
   mimirTesting.readSensors(true);
@@ -25,6 +22,8 @@ void setup()
   mimirTesting.sendData(true);
   mimirTesting.WiFi_OFF();
   mimirTesting.logData();
+  mimirTesting.readBattery();
+  mimirTesting.statusNeoPixels();
   //mimirTesting.forceStartWiFi();
   mimirTesting.SLEEP();
 }

@@ -12,6 +12,8 @@
 #include "time.h"
 #include <WiFiManager.h>
 
+#include <NeoPixelBrightnessBus.h>
+
 enum alignment
 {
   LEFT,
@@ -26,6 +28,25 @@ enum STATUS_LED
   SENSOR_LED,
   SERVER_LED,
   WIFI_LED
+};
+
+enum STATUS_ERROR
+{
+  ERROR_READ = -3,
+  ERROR_WRITE = -2,
+  ERROR_UNDEFINED = -1,
+  UNMOUNTED = 0,
+  SUCCESS = 1
+};
+
+enum STATUS_BATTERY
+{
+  CRITICAL_BATTERY,
+  LOW_BATTERY,
+  GOOD_BATTERY,
+  FULL_BATTERY,
+  CHARGING
+
 };
 
 class MimirTesting
@@ -45,7 +66,7 @@ public:
   void i2cScanner();
   void testNeoPixels(int repeat = 3, int delay = 500);
   void busyNeoPixels();
-  void statusNeoPixels();
+  void statusNeoPixels(int delay = 100);
   void activeNeoPixels(STATUS_LED system, uint32_t colour, int repeat);
 
   void readSensors(bool display = false);
@@ -61,13 +82,14 @@ public:
   void testHTTPRequest();
 
   void SLEEP();
+  void WAKEUP_REASON();
 
 private:
-  int _BATTERY = 0;
-  int _SENSOR = 0;
-  int _WIFI = 0;
-  int _SERVER = 0;
-  int _MICROSD = 0;
+  enum STATUS_BATTERY BATTERY_STATUS;
+  enum STATUS_ERROR SENSOR_STATUS = UNMOUNTED;
+  enum STATUS_ERROR WIFI_STATUS = UNMOUNTED;
+  enum STATUS_ERROR SERVER_STATUS = UNMOUNTED;
+  enum STATUS_ERROR MICROSD_STATUS = UNMOUNTED;
 
   String _IP_ADDRESS;
   char _USER[40];
@@ -103,13 +125,13 @@ private:
   int16_t compassZ;
   float bearing;
 
-  bool SHT31D_L_STATUS = false;
-  bool SHT31D_H_STATUS = false;
-  bool VEML6030_STATUS = false;
-  bool VEML6075_STATUS = false;
-  bool CCS811_STATUS = false;
-  bool BMP280_STATUS = false;
-  bool COMPASS_STATUS = false;
+  enum STATUS_ERROR SHT31D_L_STATUS = UNMOUNTED;
+  enum STATUS_ERROR SHT31D_H_STATUS = UNMOUNTED;
+  enum STATUS_ERROR VEML6030_STATUS = UNMOUNTED;
+  enum STATUS_ERROR VEML6075_STATUS = UNMOUNTED;
+  enum STATUS_ERROR CCS811_STATUS = UNMOUNTED;
+  enum STATUS_ERROR BMP280_STATUS = UNMOUNTED;
+  enum STATUS_ERROR COMPASS_STATUS = UNMOUNTED;
 
   void writeFile(fs::FS &fs, const char *path, const char *message);
   void appendFile(fs::FS &fs, const char *path, const char *message);
@@ -128,6 +150,8 @@ private:
 
   void drawString(int x, int y, String text, alignment align);
   void blinkPixel(int pixel, int R = 255, int G = 0, int B = 0, int repeat = 1);
+  RgbColor getStatusColor(enum STATUS_ERROR STATUS);
+  RgbColor getBatteryColor(enum STATUS_BATTERY STATUS);
 
   bool SetupTime();
   bool UpdateLocalTime();
