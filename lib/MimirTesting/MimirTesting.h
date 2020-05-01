@@ -88,7 +88,10 @@ private:
   float hum1;
   float hum2;
   float pres;
-  float lux1;
+  float lux;
+  float uvA;
+  float uvB;
+  float uvIndex;
   float eCO2;
   float tVOC;
   int16_t compassX;
@@ -99,6 +102,7 @@ private:
   bool SHT31D_L_STATUS = false;
   bool SHT31D_H_STATUS = false;
   bool VEML6030_STATUS = false;
+  bool VEML6075_STATUS = false;
   bool CCS811_STATUS = false;
   bool BMP280_STATUS = false;
   bool COMPASS_STATUS = false;

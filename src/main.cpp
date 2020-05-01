@@ -10,8 +10,8 @@ void setup()
     Serial.begin(115200);
     Wire.begin();
     mimirTesting.initDisplay(115200);
-    mimirTesting.initNeoPixels(50);
-    mimirTesting.i2cScanner();
+    mimirTesting.initNeoPixels(35);
+    //mimirTesting.i2cScanner();
     mimirTesting.initConfig();
     mimirTesting.initSensors();
     mimirTesting.initWIFI();
@@ -19,7 +19,7 @@ void setup()
   mimirTesting.initTimer();
   //mimirTesting.initDash();
   mimirTesting.readBattery();
-  mimirTesting.readSensors(true);
+  //mimirTesting.readSensors(true);
   // mimirTesting.WiFi_ON();
   // mimirTesting.sendData(true);
   // mimirTesting.WiFi_OFF();
@@ -28,7 +28,7 @@ void setup()
 
 void loop()
 {
- // mimirTesting.DisplayDeviceInfo();
+  // mimirTesting.DisplayDeviceInfo();
   mimirTesting.readSensors(true);
   delay(5000);
   //mimirTesting.readBattery(true);

@@ -16,6 +16,7 @@
 //Sensor Libraries
 #include "Adafruit_SHT31.h"                         //https://github.com/adafruit/Adafruit_SHT31
 #include "SparkFun_VEML6030_Ambient_Light_Sensor.h" //https://github.com/sparkfun/SparkFun_Ambient_Light_Sensor_Arduino_Library
+#include "SparkFun_VEML6075_Arduino_Library.h"
 #include <Adafruit_BMP280.h>
 #include "ccs811.h" //https://github.com/maarten-pennings/CCS811
 #include <HSCDTD008A.h>
@@ -24,6 +25,7 @@
 #define addrSHT31D_L 0x44
 #define addrSHT31D_H 0x45
 #define addrVEML6030 0x48
+#define addrVEML6075 0x10
 #define addrCCS811 0x5A
 #define addrbmp280 0x76
 #define addrCompass 0X0C
@@ -50,10 +52,12 @@ GxEPD_Class display(io, /*RST=*/16, /*BUSY=*/4);
 #define BATTERY_SENSOR_PIN 35
 #define LED_PIN 19
 #define LED_COUNT 5
+
 //Define Sensors
 Adafruit_SHT31 sht31_L = Adafruit_SHT31();
 Adafruit_SHT31 sht31_H = Adafruit_SHT31();
 SparkFun_Ambient_Light veml6030(addrVEML6030);
+VEML6075 veml6075;
 CCS811 ccs811(36);
 Adafruit_BMP280 bmp280;
 HSCDTD008A compass(Wire, addrCompass);
@@ -111,6 +115,10 @@ void MimirTesting::initSensors(bool _display)
         veml6030.setIntegTime(integTime);
         VEML6030_STATUS = true;
     }
+    if (veml6075.begin())
+    {
+        VEML6075_STATUS = true;
+    }
 
     if (ccs811.begin())
     {
@@ -142,6 +150,9 @@ void MimirTesting::DisplaySensors()
 
     !VEML6030_STATUS ? display.println("VEML6030: X")
                      : display.println("VEML6030: O");
+
+    !VEML6075_STATUS ? display.println("VEML6075: X")
+                     : display.println("VEML6075: O");
 
     !CCS811_STATUS ? display.println("CCS811: X")
                    : display.println("CCS811: O");
@@ -379,7 +390,10 @@ void MimirTesting::readSensors(bool _display)
     hum2 = (float)sht31_H.readHumidity();
     pres = (float)bmp280.readPressure() / 100;
     alt = (float)bmp280.readAltitude(SEALEVELPRESSURE_HPA);
-    lux1 = (float)veml6030.readLight();
+    lux = (float)veml6030.readLight();
+    uvA = (float)veml6075.uva();
+    uvB = (float)veml6075.uvb();
+    uvIndex = (float)veml6075.index();
     ccs811.read(&eco2, &etvoc, &errstat, &raw);
     eCO2 = (float)eco2;
     tVOC = (float)etvoc;
@@ -446,6 +460,9 @@ void MimirTesting::DisplayDeviceInfo()
     !VEML6030_STATUS ? display.println("VEML6030: X")
                      : display.println("VEML6030: O");
 
+    !VEML6075_STATUS ? display.println("VEML6075: X")
+                     : display.println("VEML6075: O");
+
     !CCS811_STATUS ? display.println("CCS811: X")
                    : display.println("CCS811: O");
 
@@ -487,7 +504,15 @@ void MimirTesting::DisplayReadings()
 
     if (VEML6030_STATUS)
     {
-        printValue(lux1, "L1", "lux");
+        printValue(lux, "L1", "lux");
+        display.println("____________");
+    }
+
+    if (VEML6075_STATUS)
+    {
+        printValue(uvA, "UVA", "");
+        printValue(uvB, "UVB", "");
+        printValue(uvIndex, "UV Index", "");
         display.println("____________");
     }
 
@@ -775,7 +800,7 @@ String MimirTesting::packageJSON()
     data["Humidity (SHT31_H)"] = hum2;
     data["Pressure (bmp280)"] = pres;
     data["Altitude (bmp280)"] = pres;
-    data["Luminance (VEML6030)"] = lux1;
+    data["Luminance (VEML6030)"] = lux;
     data["eCO2 (CCS811)"] = eCO2;
     data["VOC (CCS811)"] = tVOC;
 
