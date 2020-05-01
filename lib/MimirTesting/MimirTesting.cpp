@@ -18,15 +18,15 @@
 #include "SparkFun_VEML6030_Ambient_Light_Sensor.h" //https://github.com/sparkfun/SparkFun_Ambient_Light_Sensor_Arduino_Library
 #include <Adafruit_BMP280.h>
 #include "ccs811.h" //https://github.com/maarten-pennings/CCS811
+#include <HSCDTD008A.h>
 
 //I2C Addresses
 #define addrSHT31D_L 0x44
 #define addrSHT31D_H 0x45
-#define addrBH1715_L 0x23
-#define addrBH1715_H 0x5C
 #define addrVEML6030 0x48
 #define addrCCS811 0x5A
 #define addrbmp280 0x76
+#define addrCompass 0X0C
 
 #include <Adafruit_NeoPixel.h>
 
@@ -56,6 +56,7 @@ Adafruit_SHT31 sht31_H = Adafruit_SHT31();
 SparkFun_Ambient_Light veml6030(addrVEML6030);
 CCS811 ccs811(36);
 Adafruit_BMP280 bmp280;
+HSCDTD008A compass(Wire, addrCompass);
 
 //VEML6030 settings
 float gain = .125;
@@ -69,6 +70,13 @@ int ID;
 String dataMessage;
 
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
+
+#define RED strip.Color(235, 153, 169)       //EB99A9 or Pantone 197
+#define BLUE strip.Color(106, 173, 228)      //68ACE5 or Pantone 284
+#define ORANGE strip.Color(243, 189, 72)     //F3BD48 or Pantone 142
+#define GREEN strip.Color(168, 180, 0)       //AAB300 or Pantone 583
+#define PURPLE strip.Color(181, 147, 155)    //AF95A3 or Pantone 5215
+#define LIGHTBLUE strip.Color(163, 193, 164) //91B9A4 or Pantone 557
 
 MimirTesting::MimirTesting()
 {
@@ -90,7 +98,7 @@ void MimirTesting::initNeoPixels(int brightness)
     strip.begin();
     strip.setBrightness(brightness);
     strip.show(); // Turn OFF all pixels ASAP
-    testNeoPixels(5, 1000);
+    //testNeoPixels(5, 1000);
 }
 
 void MimirTesting::initSensors(bool _display)
@@ -109,6 +117,12 @@ void MimirTesting::initSensors(bool _display)
         ccs811.start(CCS811_MODE_1SEC);
         CCS811_STATUS = true;
     };
+
+    if (compass.begin())
+    {
+        compass.calibrate();
+        COMPASS_STATUS = true;
+    }
 
     BMP280_STATUS = bmp280.begin(addrbmp280);
 
@@ -370,6 +384,14 @@ void MimirTesting::readSensors(bool _display)
     eCO2 = (float)eco2;
     tVOC = (float)etvoc;
 
+    if (compass.measure())
+    {
+        compassX = compass.x();
+        compassY = compass.y();
+        compassZ = compass.z();
+        bearing = ((atan2(compassY, compassX)) * 180) / PI; //values will range from +180 to -180 degrees
+    }
+
     // Serial.print("CCS811: ");
     // if (errstat == CCS811_ERRSTAT_OK)
     // {
@@ -482,6 +504,14 @@ void MimirTesting::DisplayReadings()
         printValue(pres, "P", "hPa");
         printValue(alt, "Alt", "m");
         display.println("____________");
+    }
+
+    if (COMPASS_STATUS)
+    {
+        printValue(bearing, "Bearing", "deg");
+        printValue(compassX, "X", "deg");
+        printValue(compassY, "Y", "deg");
+        printValue(compassZ, "Z", "deg");
     }
 
     display.update();
@@ -648,16 +678,13 @@ void MimirTesting::testNeoPixels(int repeat, int _delay)
 {
     for (int j = 0; j > repeat; j++)
     {
-        for (long firstPixelHue = 0; firstPixelHue < 5 * 65536; firstPixelHue += 256)
+        for (int i = 0; i < strip.numPixels(); i++)
         {
-            for (int i = 0; i < strip.numPixels(); i++)
-            {
-                int pixelHue = firstPixelHue + (i * 65536L / strip.numPixels());
-                strip.setPixelColor(i, strip.gamma32(strip.ColorHSV(pixelHue)));
-            }
+            strip.setPixelColor(i, strip.Color(0, 255, 0));
             strip.show();
             delay(_delay);
-        };
+        }
+        delay(_delay);
     };
     for (int x = 0; x > strip.numPixels(); x++)
     {
@@ -783,7 +810,6 @@ void MimirTesting::readBattery(bool _display)
     printValue(voltage, "Voltage", "V");
     printValue(batteryPercent, "Battery", "%");
 
-
     display.update();
 }
 
@@ -899,3 +925,18 @@ bool MimirTesting::UpdateLocalTime()
     TimeStr = output;
     return true;
 }
+
+void MimirTesting::busyNeoPixels()
+{
+    for (int i = 0; i < strip.numPixels(); i++)
+    {
+        strip.setPixelColor(i, ORANGE);
+    }
+    strip.show();
+};
+void MimirTesting::statusNeoPixels(){
+
+};
+void MimirTesting::activeNeoPixels(STATUS_LED system, uint32_t colour, int repeat){
+
+};

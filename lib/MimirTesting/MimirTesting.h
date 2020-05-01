@@ -19,6 +19,15 @@ enum alignment
   CENTER
 };
 
+enum STATUS_LED
+{
+  BATTERY_LED,
+  MICROSD_LED,
+  SENSOR_LED,
+  SERVER_LED,
+  WIFI_LED
+};
+
 class MimirTesting
 {
 public:
@@ -34,6 +43,9 @@ public:
 
   void i2cScanner();
   void testNeoPixels(int repeat = 3, int delay = 500);
+  void busyNeoPixels();
+  void statusNeoPixels();
+  void activeNeoPixels(STATUS_LED system, uint32_t colour, int repeat);
 
   void readSensors(bool display = false);
   void readBattery(bool display = false);
@@ -79,12 +91,17 @@ private:
   float lux1;
   float eCO2;
   float tVOC;
+  int16_t compassX;
+  int16_t compassY;
+  int16_t compassZ;
+  float bearing;
 
   bool SHT31D_L_STATUS = false;
   bool SHT31D_H_STATUS = false;
   bool VEML6030_STATUS = false;
   bool CCS811_STATUS = false;
   bool BMP280_STATUS = false;
+  bool COMPASS_STATUS = false;
 
   void writeFile(fs::FS &fs, const char *path, const char *message);
   void appendFile(fs::FS &fs, const char *path, const char *message);
@@ -92,7 +109,6 @@ private:
 
   void printValue(float value, const char *type, const char *unit, int decimel = 2);
   void getIPAddress();
-
   void DisplayWiFiIcon(int x, int y);
   void DisplayBatteryIcon(int x, int y);
   void DisplaySensors();

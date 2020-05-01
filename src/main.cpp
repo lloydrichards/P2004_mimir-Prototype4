@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include <Wire.h>
 #include <MimirTesting.h>
 
 MimirTesting mimirTesting; /* Time ESP32 will go to sleep (in seconds) */
@@ -29,9 +28,9 @@ void setup()
 
 void loop()
 {
-  mimirTesting.DisplayDeviceInfo();
+ // mimirTesting.DisplayDeviceInfo();
   mimirTesting.readSensors(true);
   delay(5000);
-  mimirTesting.readBattery(true);
-  delay(5000);
+  //mimirTesting.readBattery(true);
+  //delay(5000);
 }
