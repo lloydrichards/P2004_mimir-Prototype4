@@ -1156,7 +1156,13 @@ void MimirTesting::statusNeoPixels(int _delay)
     pixel.SetPixelColor(WIFI_LED, getStatusColor(WIFI_STATUS));
     pixel.Show();
     delay(_delay);
-    pixel.ClearTo(black);
+    pixel.SetPixelColor(BATTERY_LED, black);
+    pixel.SetPixelColor(MICROSD_LED, black);
+    pixel.SetPixelColor(SENSOR_LED, black);
+    pixel.SetPixelColor(SERVER_LED, black);
+    pixel.SetPixelColor(WIFI_LED,black);
+    pixel.Show();
+    
 };
 void MimirTesting::activeNeoPixels(STATUS_LED system, uint32_t colour, int repeat){
 
