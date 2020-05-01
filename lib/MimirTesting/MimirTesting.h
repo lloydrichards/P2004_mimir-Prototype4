@@ -37,6 +37,7 @@ public:
   void initNeoPixels(int brightness = 50);
   void initSensors(bool display = false);
   void initWIFI(bool display = false);
+  void initMicroSD(bool display = false);
   void initDash();
   void initTimer();
   void initConfig();
@@ -53,6 +54,7 @@ public:
   void DisplayDeviceInfo();
 
   void sendData(bool display = false);
+  void logData(bool display = false);
   void WiFi_ON();
   void WiFi_OFF();
   void forceStartWiFi();
@@ -72,11 +74,13 @@ private:
   char _USER_ID[40];
   char _DEVICE_ID[40];
 
+  char filename[16] = "/0000-00-00.txt";
+
   String TimeStr, DateStr, ErrorMessage; // strings to hold time and date
   const char *TZ_INFO = "CET-1CEST,M3.5.0,M10.5.0/3";
 
   int StartTime = 0, CurrentHour = 0, CurrentMin = 0, CurrentSec = 0;
-  long SleepDuration = 15;
+  long SleepDuration = 5; //minutes of the hour. eg 15 would wake up at XX:00, XX:15, XX:30 and XX:45
 
   int wifi_signal;
   int batteryPercent;
@@ -110,6 +114,7 @@ private:
   void writeFile(fs::FS &fs, const char *path, const char *message);
   void appendFile(fs::FS &fs, const char *path, const char *message);
   void saveConfig();
+  void createFileName(char date[]);
 
   void printValue(float value, const char *type, const char *unit, int decimel = 2);
   void getIPAddress();

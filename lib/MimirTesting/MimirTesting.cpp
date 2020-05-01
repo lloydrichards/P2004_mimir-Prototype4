@@ -6,6 +6,8 @@
 #include <SD.h>
 #include "time.h"
 
+SPIClass spiSD(HSPI);
+
 #include <WiFi.h>
 #include <DNSServer.h>
 #include <WebServer.h>
@@ -286,6 +288,31 @@ void MimirTesting::DisplayWiFiCredentials()
     display.update();
 }
 
+void MimirTesting::initMicroSD(bool _display)
+{
+    spiSD.begin(14, 2, 15, 13);
+    Serial.println("Initializing SD card...");
+    if (!SD.begin(13, spiSD))
+    {
+        Serial.println("ERROR - SD card initialization failed!");
+        return; // init failed
+    }
+    // If the data.txt file doesn't exist
+    // Create a file on the SD card and write the data labels
+    File file = SD.open(filename);
+    if (!file)
+    {
+        Serial.println("File doens't exist");
+        Serial.println("Creating file...");
+        writeFile(SD, filename, "Date,Time,Battery(%),Temperature(SHT31_L),Temperature(SHT31_H),Temperature(BMP280),Altitude(BMP280),Humidity(SHT31_L),Humidity(SHT31_H),Pressure(BMP280),Luminance(VEML6030),UVA(VEML6075),UVB(VEML6075),UVIndex(VEML6075),eCO2(CCS811),tVOC(CCS811),bearing(Compass); \r\n");
+    }
+    else
+    {
+        Serial.println("File already exists");
+    }
+    file.close();
+}
+
 void MimirTesting::initDash()
 {
     display.fillScreen(GxEPD_WHITE);
@@ -546,6 +573,7 @@ void MimirTesting::sendData(bool _display)
 {
     if ((WiFi.status() == WL_CONNECTED))
     {
+        SetupTime();
         String package = packageJSON();
         blinkPixel(3, 255, 255, 0, 2);
 
@@ -718,6 +746,41 @@ void MimirTesting::testNeoPixels(int repeat, int _delay)
     strip.show();
 }
 
+void MimirTesting::logData(bool display)
+{
+
+    dataMessage = String(DateStr) + "," +
+                  String(TimeStr) + "," +
+                  String(batteryPercent) + "," +
+                  String(temp1) + "," +
+                  String(temp2) + "," +
+                  String(temp3) + "," +
+                  String(alt) + "," +
+                  String(hum1) + "," +
+                  String(hum2) + "," +
+                  String(pres) + "," +
+                  String(lux) + "," +
+                  String(uvA) + "," +
+                  String(uvB) + "," +
+                  String(uvIndex) + "," +
+                  String(eCO2) + "," +
+                  String(tVOC) + "," +
+                  String(bearing) + "\r\n";
+
+    Serial.print("Save data: ");
+    Serial.println(dataMessage);
+
+    File file = SD.open(filename);
+    if (!file)
+    {
+        Serial.println("File doens't exist");
+        Serial.println("Creating file...");
+        writeFile(SD, filename, "Date,Time,Battery(%),Temperature(SHT31_L),Temperature(SHT31_H),Temperature(BMP280),Altitude(BMP280),Humidity(SHT31_L),Humidity(SHT31_H),Pressure(BMP280),Luminance(VEML6030),UVA(VEML6075),UVB(VEML6075),UVIndex(VEML6075),eCO2(CCS811),tVOC(CCS811),bearing(Compass); \r\n");
+    }
+    file.close();
+    appendFile(SD, filename, dataMessage.c_str());
+}
+
 void MimirTesting::writeFile(fs::FS &fs, const char *path, const char *message)
 {
     Serial.printf("Writing file: %s\n", path);
@@ -785,24 +848,32 @@ String MimirTesting::packageJSON()
     userInfo["ipAddress"] = _IP_ADDRESS;
 
     JsonObject status = package.createNestedObject("status");
-    status["Battery Status"] = _BATTERY;
-    status["Sensors Status"] = _SENSOR;
-    status["WiFI Status"] = _WIFI;
-    status["Server Status"] = _SERVER;
-    status["MicroSD Status"] = _MICROSD;
+    status["Battery_Status"] = _BATTERY;
+    status["Sensors_Status"] = _SENSOR;
+    status["WiFI_Status"] = _WIFI;
+    status["Server_Status"] = _SERVER;
+    status["MicroSD_Status"] = _MICROSD;
+    status["Battery_Percent"] = batteryPercent;
+    status["WiFi_Signal"] = wifi_signal;
+    status["Date"] = DateStr;
+    status["Time"] = TimeStr;
 
     JsonObject data = package.createNestedObject("data");
 
-    data["Temperature (SHT31_L)"] = temp1;
-    data["Temperature (SHT31_H)"] = temp2;
-    data["Temperature (bmp280)"] = temp3;
-    data["Humidity (SHT31_L)"] = hum1;
-    data["Humidity (SHT31_H)"] = hum2;
-    data["Pressure (bmp280)"] = pres;
-    data["Altitude (bmp280)"] = pres;
-    data["Luminance (VEML6030)"] = lux;
-    data["eCO2 (CCS811)"] = eCO2;
-    data["VOC (CCS811)"] = tVOC;
+    data["Temperature(SHT31_L)"] = temp1;
+    data["Temperature(SHT31_H)"] = temp2;
+    data["Temperature(bmp280)"] = temp3;
+    data["Humidity(SHT31_L)"] = hum1;
+    data["Humidity(SHT31_H)"] = hum2;
+    data["Pressure(BMP280)"] = pres;
+    data["Altitude(BMP280)"] = pres;
+    data["Luminance(VEML6030)"] = lux;
+    data["UVA(VEML6075)"] = uvA;
+    data["UVB(VEML6075)"] = uvB;
+    data["UVIndex(VEML6075)"] = uvIndex;
+    data["eCO2(CCS811)"] = eCO2;
+    data["VOC(CCS811)"] = tVOC;
+    data["Bearing(Compass)"] = bearing;
 
     serializeJsonPretty(package, output);
     return output;
@@ -944,11 +1015,26 @@ bool MimirTesting::UpdateLocalTime()
     CurrentSec = timeinfo.tm_sec;
     //See http://www.cplusplus.com/reference/ctime/strftime/
     //Serial.println(&timeinfo, "%H:%M:%S");                               // Displays: 14:05:49
-    strftime(day_output, 30, "%a  %d-%b-%y", &timeinfo);     // Displays: Sat 24-Jun-17
+    strftime(day_output, 30, "%F", &timeinfo);               // Displays: Sat 24-Jun-17
     strftime(output, sizeof(output), "%H:%M:%S", &timeinfo); // Creates: '14:05:49'
+    createFileName(day_output);
     DateStr = day_output;
     TimeStr = output;
     return true;
+}
+
+void MimirTesting::createFileName(char date[])
+{
+    filename[1] = date[0];
+    filename[2] = date[1];
+    filename[3] = date[2];
+    filename[4] = date[3];
+    filename[5] = date[4];
+    filename[6] = date[5];
+    filename[7] = date[6];
+    filename[8] = date[7];
+    filename[9] = date[8];
+    filename[10] = date[9];
 }
 
 void MimirTesting::busyNeoPixels()
