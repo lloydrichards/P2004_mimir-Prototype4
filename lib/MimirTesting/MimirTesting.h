@@ -125,6 +125,9 @@ private:
   int16_t compassZ;
   float bearing;
 
+  float avgTemp;
+  float avgHum;
+
   enum STATUS_ERROR SHT31D_L_STATUS = UNMOUNTED;
   enum STATUS_ERROR SHT31D_H_STATUS = UNMOUNTED;
   enum STATUS_ERROR VEML6030_STATUS = UNMOUNTED;

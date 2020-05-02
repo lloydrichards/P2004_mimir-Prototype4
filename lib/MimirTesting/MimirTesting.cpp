@@ -365,9 +365,46 @@ void MimirTesting::initDash()
     DisplayWiFiIcon(GxEPD_WIDTH - 24, 22);
     DisplayBatteryIcon(GxEPD_WIDTH - 48, 0);
     display.drawLine(0, 25, GxEPD_WIDTH, 25, GxEPD_BLACK);
-    display.setCursor(0,10);
+    display.setCursor(0, 10);
     display.println(DateStr);
     display.println(TimeStr);
+
+    display.setCursor(0, 40);
+    display.print("Temperature: ");
+    display.print(avgTemp);
+    display.println("C");
+    display.print("Humidity: ");
+    display.print(avgHum);
+    display.println("%");
+    display.print("Pressure: ");
+    display.print(pres);
+    display.println("hPa");
+    display.print("Light: ");
+    display.print(lux);
+    display.println("lux");
+    display.print("UV Index: ");
+    display.println(uvIndex);
+    display.print("CO2: ");
+    display.print(eCO2);
+    display.println("ppm");
+    display.print("VOC: ");
+    display.print(tVOC);
+    display.println("ppb");
+    display.println();
+    display.println("Awake for " + String((millis() - StartTime) / 1000.0, 2) + "sec");
+    display.print("Sleep interval: ");
+    display.print(SleepDuration);
+    display.println("min");
+    display.println();
+    if (BATTERY_STATUS == LOW_BATTERY || BATTERY_STATUS == CRITICAL_BATTERY)
+        display.println("!!LOW BATTERY!!");
+
+    display.drawBitmap(3, 220, at_24, 24, 24, GxEPD_BLACK);
+    display.drawBitmap(34, 220, server_24, 24, 24, GxEPD_BLACK);
+    display.drawBitmap(65, 220, infomation_24, 24, 24, GxEPD_BLACK);
+    display.drawBitmap(96, 220, fileFill_24, 24, 24, GxEPD_BLACK);
+    display.drawRoundRect(0, 215, GxEPD_WIDTH - 6, GxEPD_HEIGHT - 215, 5, GxEPD_BLACK);
+
     display.update();
 }
 
@@ -499,30 +536,33 @@ void MimirTesting::readSensors(bool _display, bool _LED)
         bearing = ((atan2(compassY, compassX)) * 180) / PI; //values will range from +180 to -180 degrees
     }
 
-    // Serial.print("CCS811: ");
-    // if (errstat == CCS811_ERRSTAT_OK)
-    // {
-    //     Serial.print("eco2=");
-    //     Serial.print(eco2);
-    //     Serial.print(" ppm  ");
-    //     Serial.print("etvoc=");
-    //     Serial.print(etvoc);
-    //     Serial.print(" ppb  ");
-    // }
-    // else if (errstat == CCS811_ERRSTAT_OK_NODATA)
-    // {
-    //     Serial.print("waiting for (new) data");
-    // }
-    // else if (errstat & CCS811_ERRSTAT_I2CFAIL)
-    // {
-    //     Serial.print("I2C error");
-    // }
-    // else
-    // {
-    //     Serial.print("error: ");
-    //     Serial.print(ccs811.errstat_str(errstat));
-    // }
-    // Serial.println();
+    avgTemp = (temp1 + temp2 + temp3) / 3;
+    avgHum = (hum1 + hum2) / 2;
+
+    Serial.print("CCS811: ");
+    if (errstat == CCS811_ERRSTAT_OK)
+    {
+        Serial.print("eco2=");
+        Serial.print(eco2);
+        Serial.print(" ppm  ");
+        Serial.print("etvoc=");
+        Serial.print(etvoc);
+        Serial.print(" ppb  ");
+    }
+    else if (errstat == CCS811_ERRSTAT_OK_NODATA)
+    {
+        Serial.print("waiting for (new) data");
+    }
+    else if (errstat & CCS811_ERRSTAT_I2CFAIL)
+    {
+        Serial.print("I2C error");
+    }
+    else
+    {
+        Serial.print("error: ");
+        Serial.print(ccs811.errstat_str(errstat));
+    }
+    Serial.println();
 
     if (_display)
         DisplayReadings();
@@ -1022,15 +1062,6 @@ void MimirTesting::readBattery(bool _display, bool _LED)
         BATTERY_STATUS = CHARGING;
     }
 
-    display.setCursor(0, 50);
-    display.println("Battery Level...");
-    printValue(voltage, "Voltage", "V");
-    printValue(batteryPercent, "Battery", "%");
-
-    DisplayBatteryIcon(20, 100);
-    DisplayWiFiIcon(50, 200);
-
-    display.updateWindow(0, 40, GxEPD_WIDTH, GxEPD_HEIGHT - 40);
     if (_LED)
         statusNeoPixels();
 }
