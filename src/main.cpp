@@ -7,26 +7,26 @@ void setup()
 {
   mimirTesting.initTimer();
   mimirTesting.WAKEUP_REASON();
+
+
   Serial.begin(115200);
   mimirTesting.initDisplay(115200);
-  mimirTesting.initNeoPixels();
+  mimirTesting.initNeoPixels(true);
   //mimirTesting.i2cScanner();
   mimirTesting.initConfig();
-  mimirTesting.initMicroSD();
-  mimirTesting.initSensors();
-  mimirTesting.initWIFI();
+  mimirTesting.initMicroSD(false, true);
+  mimirTesting.initSensors(false, true);
+  mimirTesting.initWIFI(false, true);
   //mimirTesting.initDash();
-  mimirTesting.readBattery();
-  mimirTesting.readSensors(true);
+   mimirTesting.readBattery(false, true);
+   mimirTesting.readSensors(false, true);
   mimirTesting.WiFi_ON();
-  mimirTesting.sendData(true);
+  mimirTesting.sendData(true, true);
   mimirTesting.WiFi_OFF();
-  mimirTesting.logData();
-  mimirTesting.readBattery();
-  mimirTesting.readSensors(true);
-  mimirTesting.statusNeoPixels();
+ mimirTesting.logData(false, true);
+  //mimirTesting.statusNeoPixels(100,true);
   //mimirTesting.forceStartWiFi();
-  mimirTesting.SLEEP();
+ // mimirTesting.SLEEP();
 }
 
 void loop()
@@ -35,6 +35,6 @@ void loop()
   //mimirTesting.readSensors(true);
   //mimirTesting.logData();
   //delay(5000);
-  //mimirTesting.readBattery(true);
-  //delay(5000);
+  mimirTesting.initDash();
+  delay(5000);
 }

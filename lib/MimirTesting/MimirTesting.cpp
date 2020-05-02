@@ -77,12 +77,12 @@ String dataMessage;
 
 NeoPixelBrightnessBus<NeoGrbFeature, Neo800KbpsMethod> pixel(PIXEL_COUNT, PIXEL_PIN);
 
-RgbColor red(128, 0, 0);
-RgbColor green(0, 0, 128);
-RgbColor blue(64, 64, 0);
-RgbColor yellow(0, 128, 0);
-RgbColor purple(64, 0, 64);
-RgbColor lightBlue(0, 64, 64);
+RgbColor red(50, 0, 0);
+RgbColor green(0, 50, 0);
+RgbColor blue(0, 0, 50);
+RgbColor yellow(25, 25, 0);
+RgbColor purple(25, 0, 25);
+RgbColor lightBlue(0, 25, 25);
 RgbColor white(128);
 RgbColor black(0);
 
@@ -100,15 +100,17 @@ void MimirTesting::initDisplay(int baudRate)
     display.updateWindow(0, 0, GxEPD_WIDTH, GxEPD_HEIGHT, true);
 }
 
-void MimirTesting::initNeoPixels(int brightness)
+void MimirTesting::initNeoPixels(bool _LED, int brightness)
 {
     pixel.Begin();
     pixel.Show();
-    pixel.SetBrightness(128);
+    pixel.SetBrightness(64);
     //testNeoPixels();
+    if (_LED)
+        statusNeoPixels();
 }
 
-void MimirTesting::initSensors(bool _display)
+void MimirTesting::initSensors(bool _display, bool _LED)
 {
     if (sht31_L.begin(addrSHT31D_L))
     {
@@ -142,8 +144,8 @@ void MimirTesting::initSensors(bool _display)
 
     if (ccs811.begin())
     {
-        ccs811.start(CCS811_MODE_60SEC);
-        CCS811_STATUS = SUCCESS;
+        if (ccs811.start(CCS811_MODE_1SEC))
+            CCS811_STATUS = SUCCESS;
     }
     else
         CCS811_STATUS = ERROR_UNDEFINED;
@@ -179,6 +181,9 @@ void MimirTesting::initSensors(bool _display)
 
     if (_display)
         DisplaySensors();
+
+    if (_LED)
+        statusNeoPixels();
 }
 
 void MimirTesting::DisplaySensors()
@@ -203,7 +208,7 @@ void MimirTesting::DisplaySensors()
     display.update();
 }
 
-void MimirTesting::initWIFI(bool _display)
+void MimirTesting::initWIFI(bool _display, bool _LED)
 {
     WiFiManagerParameter custom_USER("User Name", "User Name", _USER, 40);
     WiFiManagerParameter custom_USER_ID("User ID", "User ID", _USER_ID, 40);
@@ -234,6 +239,10 @@ void MimirTesting::initWIFI(bool _display)
     strcpy(_DEVICE_ID, custom_DEVICE_ID.getValue());
 
     saveConfig();
+    if (_LED)
+    {
+        statusNeoPixels();
+    }
 
     WiFi_OFF();
 }
@@ -321,7 +330,7 @@ void MimirTesting::DisplayWiFiCredentials()
     display.update();
 }
 
-void MimirTesting::initMicroSD(bool _display)
+void MimirTesting::initMicroSD(bool _display, bool _LED)
 {
     spiSD.begin(14, 2, 15, 13);
     Serial.println("Initializing SD card...");
@@ -346,14 +355,19 @@ void MimirTesting::initMicroSD(bool _display)
     }
     file.close();
     MICROSD_STATUS = SUCCESS;
+    if (_LED)
+        statusNeoPixels();
 }
 
 void MimirTesting::initDash()
 {
     display.fillScreen(GxEPD_WHITE);
-    DisplayWiFiIcon(70, 20);
-    DisplayBatteryIcon(100, 20);
+    DisplayWiFiIcon(GxEPD_WIDTH - 24, 22);
+    DisplayBatteryIcon(GxEPD_WIDTH - 48, 0);
     display.drawLine(0, 25, GxEPD_WIDTH, 25, GxEPD_BLACK);
+    display.setCursor(0,10);
+    display.println(DateStr);
+    display.println(TimeStr);
     display.update();
 }
 
@@ -458,7 +472,7 @@ void MimirTesting::WAKEUP_REASON()
     }
 }
 
-void MimirTesting::readSensors(bool _display)
+void MimirTesting::readSensors(bool _display, bool _LED)
 {
     uint16_t eco2, etvoc, errstat, raw;
 
@@ -512,6 +526,9 @@ void MimirTesting::readSensors(bool _display)
 
     if (_display)
         DisplayReadings();
+
+    if (_LED)
+        statusNeoPixels();
 }
 void MimirTesting::DisplayDeviceInfo()
 {
@@ -529,26 +546,22 @@ void MimirTesting::DisplayDeviceInfo()
     display.println(_DEVICE_ID);
     display.print("IP: ");
     display.println(_IP_ADDRESS);
+
     display.println("____________");
-    (SHT31D_L_STATUS != SUCCESS) ? display.println("SHT31_L: X ")
-                                 : display.println("SHT31_L: O");
-
-    (SHT31D_H_STATUS != SUCCESS) ? display.println("SHT31_H: X")
-                                 : display.println("SHT31_H: O");
-
-    (VEML6030_STATUS != SUCCESS) ? display.println("VEML6030: X")
-                                 : display.println("VEML6030: O");
-
-    (VEML6075_STATUS != SUCCESS) ? display.println("VEML6075: X")
-                                 : display.println("VEML6075: O");
-
-    (CCS811_STATUS != SUCCESS) ? display.println("CCS811: X")
-                               : display.println("CCS811: O");
-    (COMPASS_STATUS != SUCCESS) ? display.println("Compass: X")
-                                : display.println("Compass: O");
-
-    (BMP280_STATUS != SUCCESS) ? display.println("bmp280: X")
-                               : display.println("bmp280: O");
+    display.print("SHT31_L: ");
+    display.println(SHT31D_L_STATUS);
+    display.print("SHT31_H: ");
+    display.println(SHT31D_H_STATUS);
+    display.print("VEML6030: ");
+    display.println(VEML6030_STATUS);
+    display.print("VEML6075: ");
+    display.println(VEML6075_STATUS);
+    display.print("CCS811: ");
+    display.println(CCS811_STATUS);
+    display.print("Compass: ");
+    display.println(COMPASS_STATUS);
+    display.print("BMP280: ");
+    display.println(BMP280_STATUS);
 
     display.println("____________");
     display.print("Battery: ");
@@ -623,7 +636,7 @@ void MimirTesting::DisplayReadings()
     display.update();
 }
 
-void MimirTesting::sendData(bool _display)
+void MimirTesting::sendData(bool _display, bool _LED)
 {
     if ((WiFi.status() == WL_CONNECTED))
     {
@@ -659,6 +672,8 @@ void MimirTesting::sendData(bool _display)
 
         http.end();
     }
+    if (_LED)
+        statusNeoPixels();
 }
 
 void MimirTesting::DisplaySentData(int httpResponseCode, String response)
@@ -833,7 +848,7 @@ void MimirTesting::testNeoPixels(int repeat, int _delay)
     }
 }
 
-void MimirTesting::logData(bool display)
+void MimirTesting::logData(bool display, bool _LED)
 {
 
     dataMessage = String(DateStr) + "," +
@@ -866,6 +881,8 @@ void MimirTesting::logData(bool display)
     }
     file.close();
     appendFile(SD, filename, dataMessage.c_str());
+    if (_LED)
+        statusNeoPixels();
 }
 
 void MimirTesting::writeFile(fs::FS &fs, const char *path, const char *message)
@@ -976,7 +993,7 @@ void MimirTesting::blinkPixel(int pixel, int R, int G, int B, int repeat)
 {
 }
 
-void MimirTesting::readBattery(bool _display)
+void MimirTesting::readBattery(bool _display, bool _LED)
 {
     pinMode(BATTERY_SENSOR_PIN, INPUT);
     float voltage = getBatteryVoltage(); //output value
@@ -1014,6 +1031,8 @@ void MimirTesting::readBattery(bool _display)
     DisplayWiFiIcon(50, 200);
 
     display.updateWindow(0, 40, GxEPD_WIDTH, GxEPD_HEIGHT - 40);
+    if (_LED)
+        statusNeoPixels();
 }
 
 float MimirTesting::getBatteryVoltage()
@@ -1044,22 +1063,33 @@ float MimirTesting::getBatteryVoltage()
 
 void MimirTesting::DisplayBatteryIcon(int x, int y)
 {
-    display.drawRect(x, y - 10, 20, 10, GxEPD_BLACK); // Draw battery pack
-    display.fillRect(x + 20, y - 7, 3, 5, GxEPD_BLACK);
-    if (batteryPercent < 20) //Draw Warning Battery
+    switch (BATTERY_STATUS)
     {
-        display.fillCircle(x + 4, y - 5, 2, GxEPD_BLACK);
-        display.fillRect(x + 8, y - 6, 10, 3, GxEPD_BLACK);
-    }
-    else if (batteryPercent < 100) // Draw Percent Battery
-    {
-        display.fillRect(x + 2, y - 8, 16 * batteryPercent / 100.0, 6, GxEPD_BLACK);
-    }
-    else // Draw Charging Battery
-    {
-        display.drawLine(x + 2, y - 3, x + 10, y - 8, GxEPD_BLACK);
-        display.drawLine(x + 10, y - 8, x + 10, y - 3, GxEPD_BLACK);
-        display.drawLine(x + 10, y - 3, x + 17, y - 8, GxEPD_BLACK);
+    case CRITICAL_BATTERY:
+        display.drawBitmap(x, y, battery_24, 24, 24, GxEPD_BLACK);
+        display.drawLine(x + 9, y + 7, x + 14, y + 19, GxEPD_BLACK);
+        display.drawLine(x + 9, y + 19, x + 14, y + 7, GxEPD_BLACK);
+        break;
+    case LOW_BATTERY:
+        display.drawBitmap(x, y, battery_24, 24, 24, GxEPD_BLACK);
+        display.setCursor(x + 9, y + 19);
+        display.setTextSize(2);
+        display.print("!");
+        display.setTextSize(1);
+        break;
+    case GOOD_BATTERY:
+        display.drawBitmap(x, y, battery_24, 24, 24, GxEPD_BLACK);
+        display.fillRect(x + 9, y + 19 - 12 * (batteryPercent) / 100, 6, 12 * batteryPercent / 100, GxEPD_BLACK);
+        break;
+    case FULL_BATTERY:
+        display.drawBitmap(x, y, battery_24, 24, 24, GxEPD_BLACK);
+        display.fillRect(x + 9, y + 19 - 12 * (batteryPercent) / 100, 6, 12 * batteryPercent / 100, GxEPD_BLACK);
+        break;
+    case CHARGING:
+        display.drawBitmap(x, y, batteryCharge_24, 24, 24, GxEPD_BLACK);
+        break;
+    default:
+        break;
     }
 }
 
@@ -1147,7 +1177,7 @@ void MimirTesting::createFileName(char date[])
 void MimirTesting::busyNeoPixels(){
 
 };
-void MimirTesting::statusNeoPixels(int _delay)
+void MimirTesting::statusNeoPixels(int _delay, bool blink)
 {
     pixel.SetPixelColor(BATTERY_LED, getBatteryColor(BATTERY_STATUS));
     pixel.SetPixelColor(MICROSD_LED, getStatusColor(MICROSD_STATUS));
@@ -1155,14 +1185,16 @@ void MimirTesting::statusNeoPixels(int _delay)
     pixel.SetPixelColor(SERVER_LED, getStatusColor(SERVER_STATUS));
     pixel.SetPixelColor(WIFI_LED, getStatusColor(WIFI_STATUS));
     pixel.Show();
-    delay(_delay);
-    pixel.SetPixelColor(BATTERY_LED, black);
-    pixel.SetPixelColor(MICROSD_LED, black);
-    pixel.SetPixelColor(SENSOR_LED, black);
-    pixel.SetPixelColor(SERVER_LED, black);
-    pixel.SetPixelColor(WIFI_LED,black);
-    pixel.Show();
-    
+    if (blink)
+    {
+        delay(_delay);
+        pixel.SetPixelColor(BATTERY_LED, black);
+        pixel.SetPixelColor(MICROSD_LED, black);
+        pixel.SetPixelColor(SENSOR_LED, black);
+        pixel.SetPixelColor(SERVER_LED, black);
+        pixel.SetPixelColor(WIFI_LED, black);
+        pixel.Show();
+    }
 };
 void MimirTesting::activeNeoPixels(STATUS_LED system, uint32_t colour, int repeat){
 
@@ -1175,7 +1207,7 @@ RgbColor MimirTesting::getStatusColor(enum STATUS_ERROR STATUS)
     case ERROR_READ:
         return red;
     case ERROR_WRITE:
-        return red;
+        return purple;
     case ERROR_UNDEFINED:
         return red;
     case UNMOUNTED:

@@ -1,5 +1,6 @@
 
-#pragma once
+#ifndef Compass_h
+#define Compass_h
 
 #include "Arduino.h"
 #include <Wire.h>
@@ -155,3 +156,4 @@ public:
     inline int16_t y() { return _y; }
     inline int16_t z() { return _z; }
 };
+#endif

@@ -55,10 +55,10 @@ public:
   MimirTesting();
 
   void initDisplay(int baudRate = 115200);
-  void initNeoPixels(int brightness = 50);
-  void initSensors(bool display = false);
-  void initWIFI(bool display = false);
-  void initMicroSD(bool display = false);
+  void initNeoPixels(bool LED = false, int brightness = 50);
+  void initSensors(bool display = false, bool LED = false);
+  void initWIFI(bool display = false, bool LED = false);
+  void initMicroSD(bool display = false, bool LED = false);
   void initDash();
   void initTimer();
   void initConfig();
@@ -66,16 +66,16 @@ public:
   void i2cScanner();
   void testNeoPixels(int repeat = 3, int delay = 500);
   void busyNeoPixels();
-  void statusNeoPixels(int delay = 100);
+  void statusNeoPixels(int delay = 100, bool blink = false);
   void activeNeoPixels(STATUS_LED system, uint32_t colour, int repeat);
 
-  void readSensors(bool display = false);
-  void readBattery(bool display = false);
+  void readSensors(bool display = false, bool LED = false);
+  void readBattery(bool display = false, bool LED = false);
 
   void DisplayDeviceInfo();
 
-  void sendData(bool display = false);
-  void logData(bool display = false);
+  void sendData(bool display = false, bool LED = false);
+  void logData(bool display = false, bool LED = false);
   void WiFi_ON();
   void WiFi_OFF();
   void forceStartWiFi();
