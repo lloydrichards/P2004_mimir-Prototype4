@@ -390,7 +390,12 @@ void MimirTesting::initDash()
     display.print("VOC: ");
     display.print(tVOC);
     display.println("ppb");
+    display.println("CSS811 ERROR: ");
+    display.println(ccs811.errstat_str(ccs811ERROR));
     display.println();
+    display.print("Battery Level: ");
+    display.print(batteryPercent);
+    display.println("%");
     display.println("Awake for " + String((millis() - StartTime) / 1000.0, 2) + "sec");
     display.print("Sleep interval: ");
     display.print(SleepDuration);
@@ -518,15 +523,21 @@ void MimirTesting::readSensors(bool _display, bool _LED)
     temp3 = (float)bmp280.readTemperature();
     hum1 = (float)sht31_L.readHumidity();
     hum2 = (float)sht31_H.readHumidity();
+
+    avgTemp = (temp1 + temp2 + temp3) / 3;
+    avgHum = (hum1 + hum2) / 2;
+
     pres = (float)bmp280.readPressure() / 100;
     alt = (float)bmp280.readAltitude(SEALEVELPRESSURE_HPA);
     lux = (float)veml6030.readLight();
     uvA = (float)veml6075.uva();
     uvB = (float)veml6075.uvb();
     uvIndex = (float)veml6075.index();
+    
     ccs811.read(&eco2, &etvoc, &errstat, &raw);
     eCO2 = (float)eco2;
     tVOC = (float)etvoc;
+    ccs811ERROR = errstat;
 
     if (compass.measure())
     {
@@ -536,36 +547,8 @@ void MimirTesting::readSensors(bool _display, bool _LED)
         bearing = ((atan2(compassY, compassX)) * 180) / PI; //values will range from +180 to -180 degrees
     }
 
-    avgTemp = (temp1 + temp2 + temp3) / 3;
-    avgHum = (hum1 + hum2) / 2;
-
-    Serial.print("CCS811: ");
-    if (errstat == CCS811_ERRSTAT_OK)
-    {
-        Serial.print("eco2=");
-        Serial.print(eco2);
-        Serial.print(" ppm  ");
-        Serial.print("etvoc=");
-        Serial.print(etvoc);
-        Serial.print(" ppb  ");
-    }
-    else if (errstat == CCS811_ERRSTAT_OK_NODATA)
-    {
-        Serial.print("waiting for (new) data");
-    }
-    else if (errstat & CCS811_ERRSTAT_I2CFAIL)
-    {
-        Serial.print("I2C error");
-    }
-    else
-    {
-        Serial.print("error: ");
-        Serial.print(ccs811.errstat_str(errstat));
-    }
-    Serial.println();
-
     if (_display)
-        DisplayReadings();
+        DisplayReadings(errstat);
 
     if (_LED)
         statusNeoPixels();
@@ -618,7 +601,7 @@ void MimirTesting::DisplayDeviceInfo()
     display.update();
 }
 
-void MimirTesting::DisplayReadings()
+void MimirTesting::DisplayReadings(uint16_t errstat)
 {
     display.fillScreen(GxEPD_WHITE);
     display.setCursor(2, 20);
@@ -652,8 +635,26 @@ void MimirTesting::DisplayReadings()
 
     if (CCS811_STATUS == SUCCESS)
     {
-        printValue(eCO2, "CO2", "ppm");
-        printValue(tVOC, "VOC", "ppb");
+        if (errstat == CCS811_ERRSTAT_OK)
+        {
+            printValue(eCO2, "CO2", "ppm");
+            printValue(tVOC, "VOC", "ppb");
+        }
+        else if (errstat == CCS811_ERRSTAT_OK_NODATA)
+        {
+            display.print("waiting for (new) data");
+        }
+        else if (errstat & CCS811_ERRSTAT_I2CFAIL)
+        {
+            display.print("I2C error");
+        }
+        else
+        {
+            Serial.print("error: ");
+            Serial.print(ccs811.errstat_str(errstat));
+        }
+        Serial.println();
+
         display.println("____________");
     }
 

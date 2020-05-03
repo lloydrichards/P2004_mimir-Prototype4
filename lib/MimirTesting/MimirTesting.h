@@ -120,6 +120,7 @@ private:
   float uvIndex;
   float eCO2;
   float tVOC;
+  uint16_t ccs811ERROR;
   int16_t compassX;
   int16_t compassY;
   int16_t compassZ;
@@ -146,7 +147,7 @@ private:
   void DisplayWiFiIcon(int x, int y);
   void DisplayBatteryIcon(int x, int y);
   void DisplaySensors();
-  void DisplayReadings();
+  void DisplayReadings(uint16_t ERROR);
   void DisplayWiFiSetup();
   void DisplayWiFiCredentials();
   void DisplaySentData(int httpResponseCode, String response);
