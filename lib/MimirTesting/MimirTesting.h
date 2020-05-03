@@ -54,6 +54,20 @@ class MimirTesting
 public:
   MimirTesting();
 
+  enum STATUS_BATTERY BATTERY_STATUS;
+  enum STATUS_ERROR SENSOR_STATUS = UNMOUNTED;
+  enum STATUS_ERROR WIFI_STATUS = UNMOUNTED;
+  enum STATUS_ERROR SERVER_STATUS = UNMOUNTED;
+  enum STATUS_ERROR MICROSD_STATUS = UNMOUNTED;
+
+  enum STATUS_ERROR SHT31D_L_STATUS = UNMOUNTED;
+  enum STATUS_ERROR SHT31D_H_STATUS = UNMOUNTED;
+  enum STATUS_ERROR VEML6030_STATUS = UNMOUNTED;
+  enum STATUS_ERROR VEML6075_STATUS = UNMOUNTED;
+  enum STATUS_ERROR CCS811_STATUS = UNMOUNTED;
+  enum STATUS_ERROR BMP280_STATUS = UNMOUNTED;
+  enum STATUS_ERROR COMPASS_STATUS = UNMOUNTED;
+
   void initDisplay(int baudRate = 115200);
   void initNeoPixels(bool LED = false, int brightness = 50);
   void initSensors(bool display = false, bool LED = false);
@@ -62,6 +76,9 @@ public:
   void initDash();
   void initTimer();
   void initConfig();
+
+  void resetSensors(bool display = false, bool LED = false);
+
 
   void i2cScanner();
   void testNeoPixels(int repeat = 3, int delay = 500);
@@ -85,11 +102,7 @@ public:
   void WAKEUP_REASON();
 
 private:
-  enum STATUS_BATTERY BATTERY_STATUS;
-  enum STATUS_ERROR SENSOR_STATUS = UNMOUNTED;
-  enum STATUS_ERROR WIFI_STATUS = UNMOUNTED;
-  enum STATUS_ERROR SERVER_STATUS = UNMOUNTED;
-  enum STATUS_ERROR MICROSD_STATUS = UNMOUNTED;
+  
 
   String _IP_ADDRESS;
   char _USER[40];
@@ -102,7 +115,7 @@ private:
   const char *TZ_INFO = "CET-1CEST,M3.5.0,M10.5.0/3";
 
   int StartTime = 0, CurrentHour = 0, CurrentMin = 0, CurrentSec = 0;
-  long SleepDuration = 15; //minutes of the hour. eg 15 would wake up at XX:00, XX:15, XX:30 and XX:45
+  long SleepDuration = 2; //minutes of the hour. eg 15 would wake up at XX:00, XX:15, XX:30 and XX:45
 
   int wifi_signal;
   int batteryPercent;
@@ -128,14 +141,6 @@ private:
 
   float avgTemp;
   float avgHum;
-
-  enum STATUS_ERROR SHT31D_L_STATUS = UNMOUNTED;
-  enum STATUS_ERROR SHT31D_H_STATUS = UNMOUNTED;
-  enum STATUS_ERROR VEML6030_STATUS = UNMOUNTED;
-  enum STATUS_ERROR VEML6075_STATUS = UNMOUNTED;
-  enum STATUS_ERROR CCS811_STATUS = UNMOUNTED;
-  enum STATUS_ERROR BMP280_STATUS = UNMOUNTED;
-  enum STATUS_ERROR COMPASS_STATUS = UNMOUNTED;
 
   void writeFile(fs::FS &fs, const char *path, const char *message);
   void appendFile(fs::FS &fs, const char *path, const char *message);

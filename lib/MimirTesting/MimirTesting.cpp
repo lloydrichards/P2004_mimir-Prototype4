@@ -130,6 +130,8 @@ void MimirTesting::initSensors(bool _display, bool _LED)
     {
         veml6030.setGain(gain);
         veml6030.setIntegTime(integTime);
+        veml6030.setPowSavMode(2);
+        veml6030.enablePowSave();
         VEML6030_STATUS = SUCCESS;
     }
     else
@@ -149,6 +151,76 @@ void MimirTesting::initSensors(bool _display, bool _LED)
     }
     else
         CCS811_STATUS = ERROR_UNDEFINED;
+
+    if (compass.begin())
+    {
+        compass.calibrate();
+        COMPASS_STATUS = SUCCESS;
+    }
+    else
+        COMPASS_STATUS = ERROR_UNDEFINED;
+
+    if (bmp280.begin(addrbmp280))
+    {
+        BMP280_STATUS = SUCCESS;
+    }
+    else
+        BMP280_STATUS = ERROR_UNDEFINED;
+
+    if (
+        SHT31D_L_STATUS == SUCCESS &&
+        SHT31D_H_STATUS == SUCCESS &&
+        VEML6030_STATUS == SUCCESS &&
+        VEML6075_STATUS == SUCCESS &&
+        CCS811_STATUS == SUCCESS &&
+        BMP280_STATUS == SUCCESS &&
+        COMPASS_STATUS == SUCCESS)
+    {
+        SENSOR_STATUS = SUCCESS;
+    }
+    else
+        SENSOR_STATUS = ERROR_UNDEFINED;
+
+    if (_display)
+        DisplaySensors();
+
+    if (_LED)
+        statusNeoPixels();
+}
+
+void MimirTesting::resetSensors(bool _display, bool _LED)
+{
+    if (sht31_L.begin(addrSHT31D_L))
+    {
+        SHT31D_L_STATUS = SUCCESS;
+    }
+    else
+        SHT31D_L_STATUS = ERROR_UNDEFINED;
+
+    if (sht31_H.begin(addrSHT31D_H))
+    {
+        SHT31D_H_STATUS = SUCCESS;
+    }
+    else
+        SHT31D_H_STATUS = ERROR_UNDEFINED;
+
+    if (veml6030.begin())
+    {
+        veml6030.setGain(gain);
+        veml6030.setIntegTime(integTime);
+        veml6030.setPowSavMode(2);
+        veml6030.enablePowSave();
+        VEML6030_STATUS = SUCCESS;
+    }
+    else
+        VEML6030_STATUS = ERROR_UNDEFINED;
+
+    if (veml6075.begin())
+    {
+        VEML6075_STATUS = SUCCESS;
+    }
+    else
+        VEML6075_STATUS = ERROR_UNDEFINED;
 
     if (compass.begin())
     {
@@ -462,6 +534,7 @@ void MimirTesting::WiFi_ON()
     WiFiManager wifiManager;
     wifiManager.autoConnect("mimirAP");
     wifi_signal = WiFi.RSSI();
+    SetupTime();
 };
 void MimirTesting::WiFi_OFF()
 {
@@ -471,6 +544,15 @@ void MimirTesting::WiFi_OFF()
 
 void MimirTesting::SLEEP()
 {
+    //CONFIG Sleep Pin
+    Serial.println("Config Sleep Pin");
+    gpio_pullup_en(GPIO_NUM_39);    // use pullup on GPIO
+    gpio_pulldown_dis(GPIO_NUM_39); // not use pulldown on GPIO
+
+    esp_sleep_enable_ext0_wakeup(GPIO_NUM_39, 0);
+
+    //CONFIG Sleep Timer
+    Serial.println("Config Sleep Timer");                                                           // Wake if GPIO is low
     long SleepTimer = (SleepDuration * 60 - ((CurrentMin % SleepDuration) * 60 + CurrentSec)) + 30; //Some ESP32 are too fast to maintain accurate time
     esp_sleep_enable_timer_wakeup(SleepTimer * 1000000LL);
 
@@ -480,6 +562,8 @@ void MimirTesting::SLEEP()
 
     delay(100);
     display.powerDown();
+    pixel.ClearTo(black);
+    pixel.Show();
 
     delay(100);
     esp_deep_sleep_start();
@@ -488,11 +572,15 @@ void MimirTesting::SLEEP()
 void MimirTesting::WAKEUP_REASON()
 {
     esp_sleep_wakeup_cause_t wakeup_reason;
-
     wakeup_reason = esp_sleep_get_wakeup_cause();
-
     switch (wakeup_reason)
     {
+    case ESP_SLEEP_WAKEUP_UNDEFINED:
+        Serial.println("In case of deep sleep, reset was not caused by exit from deep sleep");
+        break;
+    case ESP_SLEEP_WAKEUP_ALL:
+        Serial.println("Not a wakeup cause, used to disable all wakeup sources with esp_sleep_disable_wakeup_source");
+        break;
     case ESP_SLEEP_WAKEUP_EXT0:
         Serial.println("Wakeup caused by external signal using RTC_IO");
         break;
@@ -505,11 +593,11 @@ void MimirTesting::WAKEUP_REASON()
     case ESP_SLEEP_WAKEUP_TOUCHPAD:
         Serial.println("Wakeup caused by touchpad");
         break;
-    case ESP_SLEEP_WAKEUP_ULP:
-        Serial.println("Wakeup caused by ULP program");
+    case ESP_SLEEP_WAKEUP_UART:
+        Serial.println("Wakeup caused by UART (light sleep only)");
         break;
     default:
-        Serial.printf("Wakeup was not caused by deep sleep: %d\n", wakeup_reason);
+        Serial.println("Wakeup was not caused by deep sleep");
         break;
     }
 }
@@ -529,11 +617,12 @@ void MimirTesting::readSensors(bool _display, bool _LED)
 
     pres = (float)bmp280.readPressure() / 100;
     alt = (float)bmp280.readAltitude(SEALEVELPRESSURE_HPA);
+
     lux = (float)veml6030.readLight();
     uvA = (float)veml6075.uva();
     uvB = (float)veml6075.uvb();
     uvIndex = (float)veml6075.index();
-    
+
     ccs811.read(&eco2, &etvoc, &errstat, &raw);
     eCO2 = (float)eco2;
     tVOC = (float)etvoc;
