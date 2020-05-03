@@ -350,6 +350,31 @@ void MimirTesting::initConfig()
                 strcpy(_USER, configJson["User"] | "N/A");
                 strcpy(_USER_ID, configJson["UserID"] | "N/A");
                 strcpy(_DEVICE_ID, configJson["DeviceID"] | "N/A");
+
+                // JsonVariant _BATTERY_STATUS = configJson["BATTERY_STATUS"];
+                // BATTERY_STATUS = _BATTERY_STATUS.as<STATUS_BATTERY>();
+                // JsonVariant _SENSOR_STATUS = configJson["SENSOR_STATUS"];
+                // SENSOR_STATUS = _SENSOR_STATUS.as<STATUS_ERROR>();
+                // JsonVariant _WIFI_STATUS = configJson["WIFI_STATUS"];
+                // WIFI_STATUS = _WIFI_STATUS.as<STATUS_ERROR>();
+                // JsonVariant _SERVER_STATUS = configJson["SERVER_STATUS"];
+                // SERVER_STATUS = _SERVER_STATUS.as<STATUS_ERROR>();
+                // JsonVariant _MICROSD_STATUS = configJson["MICROSD_STATUS"];
+                // MICROSD_STATUS = _MICROSD_STATUS.as<STATUS_ERROR>();
+                // JsonVariant _SHT31D_L_STATUS = configJson["SHT31D_L_STATUS"];
+                // SHT31D_L_STATUS = _SHT31D_L_STATUS.as<STATUS_ERROR>();
+                // JsonVariant _SHT31D_H_STATUS = configJson["SHT31D_H_STATUS"];
+                // SHT31D_H_STATUS = _SHT31D_H_STATUS.as<STATUS_ERROR>();
+                // JsonVariant _VEML6030_STATUS = configJson["VEML6030_STATUS"];
+                // VEML6030_STATUS = _VEML6030_STATUS.as<STATUS_ERROR>();
+                // JsonVariant _VEML6075_STATUS = configJson["VEML6075_STATUS"];
+                // VEML6075_STATUS = _VEML6075_STATUS.as<STATUS_ERROR>();
+                // JsonVariant _CCS811_STATUS = configJson["CCS811_STATUS"];
+                // CCS811_STATUS = _CCS811_STATUS.as<STATUS_ERROR>();
+                // JsonVariant _BMP280_STATUS = configJson["BMP280_STATUS"];
+                // BMP280_STATUS = _BMP280_STATUS.as<STATUS_ERROR>();
+                // JsonVariant _COMPASS_STATUS = configJson["COMPASS_STATUS"];
+                // COMPASS_STATUS = _COMPASS_STATUS.as<STATUS_ERROR>();
             }
             else
             {
@@ -370,13 +395,26 @@ void MimirTesting::saveConfig()
     newConfigJson["UserID"] = _USER_ID;
     newConfigJson["DeviceID"] = _DEVICE_ID;
 
+    newConfigJson["BATTERY_STATUS"] = BATTERY_STATUS;
+    newConfigJson["SENSOR_STATUS"] = SENSOR_STATUS;
+    newConfigJson["WIFI_STATUS"] = WIFI_STATUS;
+    newConfigJson["SERVER_STATUS"] = SERVER_STATUS;
+    newConfigJson["MICROSD_STATUS"] = MICROSD_STATUS;
+    newConfigJson["SHT31D_L_STATUS"] = SHT31D_L_STATUS;
+    newConfigJson["SHT31D_H_STATUS"] = SHT31D_H_STATUS;
+    newConfigJson["VEML6030_STATUS"] = VEML6030_STATUS;
+    newConfigJson["VEML6075_STATUS"] = VEML6075_STATUS;
+    newConfigJson["CCS811_STATUS"] = CCS811_STATUS;
+    newConfigJson["BMP280_STATUS"] = BMP280_STATUS;
+    newConfigJson["COMPASS_STATUS"] = COMPASS_STATUS;
+
     fs::File configFile = SPIFFS.open("/config.json", "w");
     if (!configFile)
     {
         Serial.println("failed to open config file for writing");
     }
 
-    serializeJson(newConfigJson, Serial);
+    //serializeJson(newConfigJson, Serial);
     serializeJson(newConfigJson, configFile);
     configFile.close();
 }
@@ -544,6 +582,7 @@ void MimirTesting::WiFi_OFF()
 
 void MimirTesting::SLEEP()
 {
+    saveConfig();
     //CONFIG Sleep Pin
     Serial.println("Config Sleep Pin");
     gpio_pullup_en(GPIO_NUM_39);    // use pullup on GPIO
@@ -888,6 +927,8 @@ void MimirTesting::i2cScanner()
 {
     byte error, address;
     int nDevices;
+
+    Wire.begin();
 
     display.fillScreen(GxEPD_WHITE);
     display.setCursor(2, 20);

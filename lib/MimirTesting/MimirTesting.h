@@ -115,7 +115,7 @@ private:
   const char *TZ_INFO = "CET-1CEST,M3.5.0,M10.5.0/3";
 
   int StartTime = 0, CurrentHour = 0, CurrentMin = 0, CurrentSec = 0;
-  long SleepDuration = 2; //minutes of the hour. eg 15 would wake up at XX:00, XX:15, XX:30 and XX:45
+  long SleepDuration = 15; //minutes of the hour. eg 15 would wake up at XX:00, XX:15, XX:30 and XX:45
 
   int wifi_signal;
   int batteryPercent;

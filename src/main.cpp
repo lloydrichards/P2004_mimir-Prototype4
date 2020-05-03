@@ -108,12 +108,12 @@ void setup()
   case ESP_SLEEP_WAKEUP_UNDEFINED:
     //When RESET is Pressed
     mimirTesting.initNeoPixels(true);
-    //mimirTesting.i2cScanner();
+    mimirTesting.i2cScanner();
     mimirTesting.initConfig();
     mimirTesting.readBattery(false, true);
     mimirTesting.initMicroSD(false, true);
-    mimirTesting.initSensors(false, true);
-    mimirTesting.initWIFI(false, true);
+    mimirTesting.initSensors(true, true);
+    mimirTesting.initWIFI(true, true);
     mimirTesting.DisplayDeviceInfo();
     break;
   case ESP_SLEEP_WAKEUP_EXT0:
@@ -129,7 +129,7 @@ void setup()
     mimirTesting.initMicroSD(false, false);
     mimirTesting.resetSensors(false, false);
     //mimirTesting.initWIFI(false, false);
-    mimirTesting.readSensors(true, false);
+    mimirTesting.readSensors(false, false);
     mimirTesting.WiFi_ON();
     mimirTesting.sendData(true, false);
     mimirTesting.WiFi_OFF();
