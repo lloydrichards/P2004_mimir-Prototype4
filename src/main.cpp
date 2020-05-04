@@ -167,16 +167,16 @@ void setup()
   // esp_deep_sleep_start();
   //mimirTesting.statusNeoPixels(100,true);
   //mimirTesting.forceStartWiFi();
-  mimirTesting.SLEEP();
+  //mimirTesting.SLEEP();
 }
 
 void loop()
 {
   // mimirTesting.DisplayDeviceInfo();
-  // mimirTesting.readSensors();
+  mimirTesting.readSensors();
   // mimirTesting.logData();
   // delay(5000);
-  // mimirTesting.initDash();
+  mimirTesting.initDash();
   // mimirTesting.statusNeoPixels(100, true);
-  // delay(60000);
+  delay(60000);
 }

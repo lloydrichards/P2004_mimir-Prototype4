@@ -79,7 +79,6 @@ public:
 
   void resetSensors(bool display = false, bool LED = false);
 
-
   void i2cScanner();
   void testNeoPixels(int repeat = 3, int delay = 500);
   void busyNeoPixels();
@@ -102,8 +101,6 @@ public:
   void WAKEUP_REASON();
 
 private:
-  
-
   String _IP_ADDRESS;
   char _USER[40];
   char _USER_ID[40];
@@ -139,8 +136,8 @@ private:
   int16_t compassZ;
   float bearing;
 
-  float avgTemp;
-  float avgHum;
+  double avgTemp;
+  int avgHum;
 
   void writeFile(fs::FS &fs, const char *path, const char *message);
   void appendFile(fs::FS &fs, const char *path, const char *message);
@@ -156,6 +153,8 @@ private:
   void DisplayWiFiSetup();
   void DisplayWiFiCredentials();
   void DisplaySentData(int httpResponseCode, String response);
+
+  static void WiFiCallback(WiFiManager *myWiFiManager);
 
   void drawString(int x, int y, String text, alignment align);
   void blinkPixel(int pixel, int R = 255, int G = 0, int B = 0, int repeat = 1);

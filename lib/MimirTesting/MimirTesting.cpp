@@ -529,11 +529,7 @@ void MimirTesting::forceStartWiFi()
     wifiManager.addParameter(&custom_USER_ID);
     wifiManager.addParameter(&custom_DEVICE_ID);
 
-    display.fillScreen(GxEPD_WHITE);
-    display.setCursor(2, 20);
-    display.println("*WiFi Config*");
-    display.println("****Mode*****");
-    display.update();
+    wifiManager.setAPCallback(WiFiCallback);
 
     if (!wifiManager.startConfigPortal("OnDemandAP"))
     {
@@ -553,6 +549,25 @@ void MimirTesting::forceStartWiFi()
     saveConfig();
 
     WiFi_OFF();
+}
+
+void MimirTesting::WiFiCallback(WiFiManager *myWiFiManager)
+{
+    display.fillScreen(GxEPD_WHITE);
+    display.setCursor(2, 20);
+    display.println("*WiFi Config*");
+    display.println("****Mode*****");
+    display.println();
+    display.print("You will need to connect to the wifi network ");
+
+    //if you used auto generated SSID, print it
+    display.println(myWiFiManager->getConfigPortalSSID());
+    display.print("And then go to the IP ");
+    display.print(WiFi.softAPIP());
+    display.println(" to complete the registration.");
+    display.println();
+    display.print("Make sure to fill out your user name and the device ID before connecting.");
+    display.update();
 }
 
 void MimirTesting::WiFi_ON()
@@ -649,8 +664,16 @@ void MimirTesting::readSensors(bool _display, bool _LED)
     lux = (float)veml6030.readLight();
     uvA = (float)veml6075.uva();
     uvB = (float)veml6075.uvb();
-    uvIndex = (float)veml6075.index();
+    uvIndex = (float)veml6075.index();    
 
+    float fract = modf(avgTemp, &avgTemp);
+    uint16_t tempHIGH = (((uint16_t)avgTemp + 25) << 9);
+    uint16_t tempLOW = ((uint16_t)(fract / 0.001953125) & 0x1FF);
+
+    uint16_t tempCONVERT = (tempHIGH | tempLOW);
+    uint16_t humCONVERT = avgHum << 1 | 0x00;
+
+    ccs811.set_envdata(tempCONVERT, humCONVERT);
     ccs811.read(&eco2, &etvoc, &errstat, &raw);
     eCO2 = (float)eco2;
     tVOC = (float)etvoc;
