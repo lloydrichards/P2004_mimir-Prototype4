@@ -351,30 +351,19 @@ void MimirTesting::initConfig()
                 strcpy(_USER_ID, configJson["UserID"] | "N/A");
                 strcpy(_DEVICE_ID, configJson["DeviceID"] | "N/A");
 
-                // JsonVariant _BATTERY_STATUS = configJson["BATTERY_STATUS"];
-                // BATTERY_STATUS = _BATTERY_STATUS.as<STATUS_BATTERY>();
-                // JsonVariant _SENSOR_STATUS = configJson["SENSOR_STATUS"];
-                // SENSOR_STATUS = _SENSOR_STATUS.as<STATUS_ERROR>();
-                // JsonVariant _WIFI_STATUS = configJson["WIFI_STATUS"];
-                // WIFI_STATUS = _WIFI_STATUS.as<STATUS_ERROR>();
-                // JsonVariant _SERVER_STATUS = configJson["SERVER_STATUS"];
-                // SERVER_STATUS = _SERVER_STATUS.as<STATUS_ERROR>();
-                // JsonVariant _MICROSD_STATUS = configJson["MICROSD_STATUS"];
-                // MICROSD_STATUS = _MICROSD_STATUS.as<STATUS_ERROR>();
-                // JsonVariant _SHT31D_L_STATUS = configJson["SHT31D_L_STATUS"];
-                // SHT31D_L_STATUS = _SHT31D_L_STATUS.as<STATUS_ERROR>();
-                // JsonVariant _SHT31D_H_STATUS = configJson["SHT31D_H_STATUS"];
-                // SHT31D_H_STATUS = _SHT31D_H_STATUS.as<STATUS_ERROR>();
-                // JsonVariant _VEML6030_STATUS = configJson["VEML6030_STATUS"];
-                // VEML6030_STATUS = _VEML6030_STATUS.as<STATUS_ERROR>();
-                // JsonVariant _VEML6075_STATUS = configJson["VEML6075_STATUS"];
-                // VEML6075_STATUS = _VEML6075_STATUS.as<STATUS_ERROR>();
-                // JsonVariant _CCS811_STATUS = configJson["CCS811_STATUS"];
-                // CCS811_STATUS = _CCS811_STATUS.as<STATUS_ERROR>();
-                // JsonVariant _BMP280_STATUS = configJson["BMP280_STATUS"];
-                // BMP280_STATUS = _BMP280_STATUS.as<STATUS_ERROR>();
-                // JsonVariant _COMPASS_STATUS = configJson["COMPASS_STATUS"];
-                // COMPASS_STATUS = _COMPASS_STATUS.as<STATUS_ERROR>();
+                BATTERY_STATUS = (STATUS_BATTERY)configJson["BATTERY_STATUS"].as<int>();
+                SENSOR_STATUS = (STATUS_ERROR)configJson["SENSOR_STATUS"].as<int>();
+                WIFI_STATUS = (STATUS_ERROR)configJson["WIFI_STATUS"].as<int>();
+                SERVER_STATUS = (STATUS_ERROR)configJson["SERVER_STATUS"].as<int>();
+                MICROSD_STATUS = (STATUS_ERROR)configJson["MICROSD_STATUS"].as<int>();
+
+                SHT31D_L_STATUS = (STATUS_ERROR)configJson["SHT31D_L_STATUS"].as<int>();
+                SHT31D_H_STATUS = (STATUS_ERROR)configJson["SHT31D_H_STATUS"].as<int>();
+                VEML6030_STATUS = (STATUS_ERROR)configJson["VEML6030_STATUS"].as<int>();
+                VEML6075_STATUS = (STATUS_ERROR)configJson["VEML6075_STATUS"].as<int>();
+                CCS811_STATUS = (STATUS_ERROR)configJson["CCS811_STATUS"].as<int>();
+                BMP280_STATUS = (STATUS_ERROR)configJson["BMP280_STATUS"].as<int>();
+                COMPASS_STATUS = (STATUS_ERROR)configJson["COMPASS_STATUS"].as<int>();
             }
             else
             {
@@ -1127,6 +1116,7 @@ String MimirTesting::packageJSON()
     userInfo["userId"] = _USER_ID;
     userInfo["deviceId"] = _DEVICE_ID;
     userInfo["ipAddress"] = _IP_ADDRESS;
+    userInfo["macAddress"] = WiFi.macAddress();
 
     JsonObject status = package.createNestedObject("status");
     status["Battery_Status"] = BATTERY_STATUS;
