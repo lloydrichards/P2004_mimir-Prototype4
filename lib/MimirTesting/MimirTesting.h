@@ -114,7 +114,7 @@ private:
   char _USER[40];
   char _USER_ID[40];
   char _DEVICE_ID[40];
-  char MIMIR_VERSION[10] = "P2004.11A";
+  char MIMIR_VERSION[10] = "P2004.11B";
 
   char filename[16] = "/0000-00-00.txt";
 
