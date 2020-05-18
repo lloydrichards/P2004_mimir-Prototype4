@@ -21,6 +21,13 @@ enum alignment
   CENTER
 };
 
+enum MIMIR_MODE
+{
+  CONTINUOUS_MODE,
+  SHORT_SLEEP_MODE,
+  LONG_SLEEP_MODE
+};
+
 enum STATUS_LED
 {
   BATTERY_LED,
@@ -52,7 +59,9 @@ enum STATUS_BATTERY
 class MimirTesting
 {
 public:
-  MimirTesting();
+  MimirTesting(MIMIR_MODE mode);
+
+  enum MIMIR_MODE MODE;
 
   enum STATUS_BATTERY BATTERY_STATUS;
   enum STATUS_ERROR SENSOR_STATUS = UNMOUNTED;
@@ -75,7 +84,7 @@ public:
   void initMicroSD(bool display = false, bool LED = false);
   void initDash();
   void initTimer();
-  void initConfig();
+  void initConfig(bool display = false);
 
   void resetSensors(bool display = false, bool LED = false);
 
@@ -105,6 +114,7 @@ private:
   char _USER[40];
   char _USER_ID[40];
   char _DEVICE_ID[40];
+  char MIMIR_VERSION[10] = "P2004.11A";
 
   char filename[16] = "/0000-00-00.txt";
 

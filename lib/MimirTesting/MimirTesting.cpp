@@ -86,8 +86,9 @@ RgbColor lightBlue(0, 25, 25);
 RgbColor white(128);
 RgbColor black(0);
 
-MimirTesting::MimirTesting()
+MimirTesting::MimirTesting(MIMIR_MODE mode)
 {
+    MODE = mode;
 }
 
 void MimirTesting::initDisplay(int baudRate)
@@ -95,9 +96,6 @@ void MimirTesting::initDisplay(int baudRate)
     display.init(baudRate);
     display.setTextColor(GxEPD_BLACK);
     display.setFont(&Lato_Regular_10);
-    display.update();
-    delay(1000);
-    display.updateWindow(0, 0, GxEPD_WIDTH, GxEPD_HEIGHT, true);
 }
 
 void MimirTesting::initNeoPixels(bool _LED, int brightness)
@@ -261,7 +259,7 @@ void MimirTesting::resetSensors(bool _display, bool _LED)
 void MimirTesting::DisplaySensors()
 {
     display.fillScreen(GxEPD_WHITE);
-    display.setCursor(2, 20);
+    display.setCursor(0, 20);
     (SHT31D_L_STATUS != SUCCESS) ? display.println("SHT31_L: X ")
                                  : display.println("SHT31_L: O");
     (SHT31D_H_STATUS != SUCCESS) ? display.println("SHT31_H: X")
@@ -272,10 +270,10 @@ void MimirTesting::DisplaySensors()
                                  : display.println("VEML6075: O");
     (CCS811_STATUS != SUCCESS) ? display.println("CCS811: X")
                                : display.println("CCS811: O");
-    (COMPASS_STATUS != SUCCESS) ? display.println("CCS811: X")
-                                : display.println("CCS811: O");
-    (BMP280_STATUS != SUCCESS) ? display.println("bmp280: X")
-                               : display.println("bmp280: O");
+    (COMPASS_STATUS != SUCCESS) ? display.println("COMPASS: X")
+                                : display.println("COMPASS: O");
+    (BMP280_STATUS != SUCCESS) ? display.println("BMP280: X")
+                               : display.println("BMP280: O");
 
     display.update();
 }
@@ -291,6 +289,8 @@ void MimirTesting::initWIFI(bool _display, bool _LED)
     wifiManager.addParameter(&custom_USER);
     wifiManager.addParameter(&custom_USER_ID);
     wifiManager.addParameter(&custom_DEVICE_ID);
+
+    wifiManager.setAPCallback(WiFiCallback);
 
     wifiManager.autoConnect("mimirAP");
 
@@ -318,8 +318,17 @@ void MimirTesting::initWIFI(bool _display, bool _LED)
 
     WiFi_OFF();
 }
-void MimirTesting::initConfig()
+void MimirTesting::initConfig(bool _display)
 {
+    if (_display)
+    {
+        display.fillScreen(GxEPD_WHITE);
+        display.drawBitmap(0, 0, mimir_splash, GxEPD_WIDTH, GxEPD_HEIGHT, GxEPD_BLACK);
+        display.setCursor(0, 230);
+        display.println(MIMIR_VERSION);
+        display.update();
+    }
+
     if (SPIFFS.begin())
     {
 
@@ -495,6 +504,9 @@ void MimirTesting::initDash()
     display.print("Battery Level: ");
     display.print(batteryPercent);
     display.println("%");
+    display.print("Votage: ");
+    display.print(getBatteryVoltage());
+    display.println("V");
     display.println("Awake for " + String((millis() - StartTime) / 1000.0, 2) + "sec");
     display.print("Sleep interval: ");
     display.print(SleepDuration);
@@ -503,12 +515,13 @@ void MimirTesting::initDash()
     if (BATTERY_STATUS == LOW_BATTERY || BATTERY_STATUS == CRITICAL_BATTERY)
         display.println("!!LOW BATTERY!!");
 
-    display.drawBitmap(3, 220, at_24, 24, 24, GxEPD_BLACK);
-    display.drawBitmap(34, 220, server_24, 24, 24, GxEPD_BLACK);
-    display.drawBitmap(65, 220, infomation_24, 24, 24, GxEPD_BLACK);
-    display.drawBitmap(96, 220, fileFill_24, 24, 24, GxEPD_BLACK);
+    // display.drawBitmap(3, 220, at_24, 24, 24, GxEPD_BLACK);
+    // display.drawBitmap(34, 220, server_24, 24, 24, GxEPD_BLACK);
+    // display.drawBitmap(65, 220, infomation_24, 24, 24, GxEPD_BLACK);
+    // display.drawBitmap(96, 220, fileFill_24, 24, 24, GxEPD_BLACK);
     display.drawRoundRect(0, 215, GxEPD_WIDTH - 6, GxEPD_HEIGHT - 215, 5, GxEPD_BLACK);
-
+    display.setCursor(60, 247);
+    display.println(MIMIR_VERSION);
     display.update();
 }
 
@@ -664,7 +677,7 @@ void MimirTesting::readSensors(bool _display, bool _LED)
     lux = (float)veml6030.readLight();
     uvA = (float)veml6075.uva();
     uvB = (float)veml6075.uvb();
-    uvIndex = (float)veml6075.index();    
+    uvIndex = (float)veml6075.index();
 
     float fract = modf(avgTemp, &avgTemp);
     uint16_t tempHIGH = (((uint16_t)avgTemp + 25) << 9);
@@ -709,22 +722,8 @@ void MimirTesting::DisplayDeviceInfo()
     display.println(_DEVICE_ID);
     display.print("IP: ");
     display.println(_IP_ADDRESS);
-
-    display.println("____________");
-    display.print("SHT31_L: ");
-    display.println(SHT31D_L_STATUS);
-    display.print("SHT31_H: ");
-    display.println(SHT31D_H_STATUS);
-    display.print("VEML6030: ");
-    display.println(VEML6030_STATUS);
-    display.print("VEML6075: ");
-    display.println(VEML6075_STATUS);
-    display.print("CCS811: ");
-    display.println(CCS811_STATUS);
-    display.print("Compass: ");
-    display.println(COMPASS_STATUS);
-    display.print("BMP280: ");
-    display.println(BMP280_STATUS);
+    display.print("Version: ");
+    display.println(MIMIR_VERSION);
 
     display.println("____________");
     display.print("Battery: ");
@@ -830,24 +829,31 @@ void MimirTesting::sendData(bool _display, bool _LED)
         int httpResponseCode = http.POST(package);
         String response = http.getString();
 
-        if (_display)
-            DisplaySentData(httpResponseCode, response);
-
         if (httpResponseCode > 0)
         {
+            if (_display)
+            {
+                display.fillRect(2, 220, GxEPD_WIDTH - 2, GxEPD_HEIGHT - 220, GxEPD_WHITE);
+                display.drawBitmap(3, 220, fileFill_24, 24, 24, GxEPD_BLACK);
+                display.drawBitmap(34, 220, repeat_24, 24, 24, GxEPD_BLACK);
+                display.drawBitmap(65, 220, server_24, 24, 24, GxEPD_BLACK);
+                display.drawBitmap(96, 220, accept_24, 24, 24, GxEPD_BLACK);
+                display.updateWindow(2, 220, GxEPD_WIDTH - 2, GxEPD_HEIGHT - 222);
+            }
             SERVER_STATUS = SUCCESS;
-            display.println("Data Sent!");
-            display.println(httpResponseCode);
-            display.println(response);
-            blinkPixel(1, 0, 255, 0, 2);
         }
         else
         {
+            if (_display)
+            {
+                display.fillRect(2, 220, GxEPD_WIDTH - 2, GxEPD_HEIGHT - 220, GxEPD_WHITE);
+                display.drawBitmap(3, 220, fileFill_24, 24, 24, GxEPD_BLACK);
+                display.drawBitmap(34, 220, repeat_24, 24, 24, GxEPD_BLACK);
+                display.drawBitmap(65, 220, server_24, 24, 24, GxEPD_BLACK);
+                display.drawBitmap(96, 220, reject_24, 24, 24, GxEPD_BLACK);
+                display.updateWindow(2, 220, GxEPD_WIDTH - 2, GxEPD_HEIGHT - 222);
+            }
             SERVER_STATUS = ERROR_WRITE;
-            display.println("ERROR");
-            display.println("Error on sending POST request");
-            display.println(httpResponseCode);
-            blinkPixel(1, 255, 0, 0, 2);
         }
         getIPAddress();
 
@@ -1140,6 +1146,7 @@ String MimirTesting::packageJSON()
     userInfo["deviceId"] = _DEVICE_ID;
     userInfo["ipAddress"] = _IP_ADDRESS;
     userInfo["macAddress"] = WiFi.macAddress();
+    userInfo["version"] = MIMIR_VERSION;
 
     JsonObject status = package.createNestedObject("status");
     status["Battery_Status"] = BATTERY_STATUS;
@@ -1182,7 +1189,7 @@ void MimirTesting::readBattery(bool _display, bool _LED)
     pinMode(BATTERY_SENSOR_PIN, INPUT);
     float voltage = getBatteryVoltage(); //output value
     const float battery_max = 4.2;       //maximum voltage of battery
-    const float battery_min = 3.3;       //minimum voltage of battery before shutdown
+    const float battery_min = 3.0;       //minimum voltage of battery before shutdown
     batteryPercent = roundf(((voltage - battery_min) / (battery_max - battery_min)) * 100);
 
     if (batteryPercent < 10)
@@ -1197,11 +1204,11 @@ void MimirTesting::readBattery(bool _display, bool _LED)
     {
         BATTERY_STATUS = GOOD_BATTERY;
     }
-    else if (batteryPercent <= 100)
+    else if (batteryPercent < 100)
     {
         BATTERY_STATUS = FULL_BATTERY;
     }
-    else if (batteryPercent > 100)
+    else if (batteryPercent >= 100)
     {
         BATTERY_STATUS = CHARGING;
     }
@@ -1226,8 +1233,8 @@ float MimirTesting::getBatteryVoltage()
     }
     // calculate the voltage
     voltage = sum / (float)500;
-    voltage = (voltage * 3.476) / 4096.0; //for internal 1.1v reference
-                                          // use if added divider circuit
+    voltage = (voltage * 3.5649) / 4096.0; //for internal 1.1v reference
+                                           // use if added divider circuit
     voltage = voltage / (R2 / (R1 + R2));
     //round value by two precision
     voltage = roundf(voltage * 100) / 100;
