@@ -62,12 +62,12 @@ void setup()
     mimirTesting.resetSensors(false, false);
     //mimirTesting.initWIFI(false, false);
     mimirTesting.readSensors(false, false);
-    mimirTesting.initDash();
     mimirTesting.WiFi_ON();
     mimirTesting.sendData(true, false);
     mimirTesting.WiFi_OFF();
     mimirTesting.logData(false, false);
     mimirTesting.statusNeoPixels(100, true);
+    mimirTesting.initDash();
     break;
   default:
     break;
